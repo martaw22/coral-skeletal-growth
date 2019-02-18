@@ -377,91 +377,58 @@ gridsizeinput_forsurface = .75
 gridsize_multiplier = 1/gridsizeinput_forsurface
 
 ## Simulation
-for omega in omega_values:
-    
+for omega in omega_values:    
     Growth_Rate = ((omega-1)**1.7)*(11*10E-9) #mol m-2 sec-1
     Growth_Rate = Growth_Rate/1000/1000/1000/1000    #change units to mol/um/s
-
     #nuclei/m2/s converted to nuclei/um2 for every 10 seconds
     J_rate = A * np.exp(Balpha3/np.log(omega)**2)/1000/1000/1000/1000*10
-
-
     for max_t in maximum_t:
         #Start with one nuclei randomly distrubuted on the XY plane. 
         NUCLEI = np.array([[ random.random()*x_length,  random.random()*y_length, 0, seed_radius]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
         ##                       [x                                  y            z     radius]
-        
         #recording the time step of each nuclei that is formed and the time that each percentage of the 2d yx grid is covered
         nuclei_timeofdeposition = [0]
-        
-        
-        ttime = np.arange(0,max_t,delta_t)
-        
+        ttime = np.arange(0,max_t,delta_t)        
         for t in ttime:
             print(t)
             ## Grow Spheres
             #Each sphere is described by a radius and an origin. 
             #This information saved in an array NUCLEI that grows in length with more nuclei.            
             #After each timestep grow each sphere according to the inorganic rate law. 
-            growEachNucleus(NUCLEI)
-            
+            growEachNucleus(NUCLEI)           
             #The surface is made up of boxes and the vertices of the boxes are saved in the array surface_points
-            surface_points = Discrete3dSurface(gridsizeinput_forsurface)
-            
-            areas = areasofEachCellinGrid(surface_points)            
-            
+            surface_points = Discrete3dSurface(gridsizeinput_forsurface)            
+            areas = areasofEachCellinGrid(surface_points)                        
             #now want to be able to pick a point within each small cell, once that cell is picked to nucleate within
             #also want to be able to take the sum of all areas, then pick a number randomly from 0 to the sum, then find out which cell that number is referring to
             sum_areas = sum(areas)
             #pick an number randomly from 0 through sum_areas
-            random_location = random.random()*sum_areas
-           
+            random_location = random.random()*sum_areas           
             ## Nucleation        
             #Based on probability of a nucleus being deposited (based on omega and area)
             #Need to select from the right probability distribution -> think about
             #this! For now, assume in steady-state regime so a uniform distribution
             #seems reasonable
             NEW_NUCLEI = None
-            Nuclei_flag = 0
-        
+            Nuclei_flag = 0       
             prob_nuc = x_length*y_length*J_rate*delta_t
-            print(prob_nuc)
             if prob_nuc > 1:
-                print('ERROR: reduce time step size - nucleation too fast')
-            
-            randomnumber = random.random()
-            
+                print('ERROR: reduce time step size - nucleation too fast')            
+            randomnumber = random.random()            
             if randomnumber<=prob_nuc:
                 #generate a new nuclei on x,y,z surface
                 NEW_NUCLEI = np.array([[ findNewXYZ(areas, random_location)[0],  findNewXYZ(areas, random_location)[1], findNewXYZ(areas, random_location)[2], seed_radius]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
                 Nuclei_flag = 1  
-            #Nucleate on surface of sphere based on whole surface area of sphere and do
-            #so randomly on sphere
+
             percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(NUCLEI[:,0],NUCLEI[:,1],NUCLEI[:,3])*100
-            
+            #Record when ground is covered to certain percentages
             time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
-            #pick the percent coverage that you want to seed the ground with - nuclei won't be able to build on top of each other until this coverage percent of first layer is passed
-            coverage_percent = 90
-           
-            
-            if Nuclei_flag == 1:  #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add
-                if percentcoverage_firstlayer < coverage_percent:
-                    nuc_xyz = NEW_NUCLEI[0,0:3]*np.ones((NUCLEI.shape[0],3)) #extract coordinates of the origin #want to get the first three columns of new nuclei in the first row 
-                    dist_matrix = np.sqrt(np.sum((NUCLEI[:,0:3]-nuc_xyz)**2,axis=1)) #calcualte distnace from every other nuclei  #the first three columns in NUCLEI - the xyz coordinates of the NEWest NUCLEI, squared, then sum up the rows of this new array - so distance between new point and old points squared and then x,y,andz components summed
-                    if np.all(dist_matrix > NUCLEI[:,3]):   #add new nuclei to the NUCLEI array, but remove if any distance are shorter than the corresponding radius
-                        NUCLEI = np.append(NUCLEI, [NEW_NUCLEI[0,:]], axis=0)
-                        print(NUCLEI)
-                        nuclei_timeofdeposition = np.append(nuclei_timeofdeposition,t)                
-                        
-                    else:
-                        print('New nuclei too close to existing nuclei')                        
-                #after seeding of ground, adding the nuclei continuously so that they can be added on top of each other        
-                if percentcoverage_firstlayer >= coverage_percent:
-                    NUCLEI = np.append(NUCLEI, [NEW_NUCLEI[0,:]], axis=0)
-                    print(NUCLEI)
-                    nuclei_timeofdeposition = np.append(nuclei_timeofdeposition,t)
-                
-           
+            if Nuclei_flag == 1:  #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add                       
+                #adding the nuclei continuously so that they can be added on top of each other        
+                NUCLEI = np.append(NUCLEI, [NEW_NUCLEI[0,:]], axis=0)
+                print(NUCLEI)
+                nuclei_timeofdeposition = np.append(nuclei_timeofdeposition,t)
+          
             if t == 500:
                 percentcoverage_500 = percentcoverage_firstlayer
                 totalvol_500 = totalVolume()
