@@ -297,6 +297,27 @@ def areasofEachCellinGrid(surfacegrid_points):
             all_areas = np.append(all_areas,area_cell)
     return all_areas
 
+def findNewXYZ(areas_gridcells, random_location):
+    '''Find which cell grid you should put a new nucleus in (the grid is area weighted) and 
+    then place the nucleus randomly within that grid cell'''
+    #go through the cell areas and add them up until you get to the value you generated in random_location
+    which_cell_area = 0
+    area_count = 0
+    for area in areas_gridcells:
+            if which_cell_area <= random_location:
+                which_cell_area += area
+                area_count += gridsizeinput_forsurface
+    #finding the point1 of the square that is going to have the nucleus in it - point1 is determined by the  lowest 
+    #x and y value pair of the four corners
+    point1_y = (area_count%(x_length*gridsize_multiplier))/gridsize_multiplier
+    point1_x = (area_count - point1_y)/(x_length*gridsize_multiplier)
+    #pick a point randomly in the (gridsize,gridsize) x,y box that has a vertice of point1 - basically making 
+    #an assumption that weighting of area across a box this small is negligibly different
+    #this is the new nucleation location on a surface! 
+    new_weighted_x = random.random()-gridsizeinput_forsurface + point1_x
+    new_weighted_y = random.random()-gridsizeinput_forsurface + point1_y    
+    new_weighted_z = getZElevation(new_weighted_x, new_weighted_y)  
+    return new_weighted_x, new_weighted_y, new_weighted_z
 
 #python version of timing
 #from: https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
@@ -375,38 +396,12 @@ for omega in omega_values:
             sum_areas = sum(areas)
             #pick an number randomly from 0 through sum_areas
             random_location = random.random()*sum_areas
-             
-            #go through the cell areas and add them up until you get to the value you generated in random_location
-            which_cell_area = 0
-            area_count = 0
-            for area in areas:
-                    
-                if which_cell_area <= random_location:
-                    which_cell_area += area
-                    area_count += gridsizeinput_forsurface
-            #finding the point1 of the square that is going to have the nucleus in it - point1 is determined by the  lowest 
-            #x and y value pair of the four corners
-            point1_y = (area_count%(x_length*gridsize_multiplier))/gridsize_multiplier
-            point1_x = (area_count - point1_y)/(x_length*gridsize_multiplier)
-            
-            
-            #pick a point randomly in the (gridsize,gridsize) x,y box that has a vertice of point1 - basically making 
-            #an assumption that weighting of area across a box this small is negligibly different
-            #this is the new nucleation location on a surface! 
-        
-            new_weighted_x = random.random()-gridsizeinput_forsurface + point1_x
-            new_weighted_y = random.random()-gridsizeinput_forsurface + point1_y    
-            new_weighted_z = getZElevation(new_weighted_x, new_weighted_y)    
-                    
-            
-            ## Nucleation
-        #dont forget to nucleate on XY plane too (then check later if within the volume
-        #of a sphere)
-        
-        #get a likleyhood of nucleation per SA per time step. 
-        #Need to select from the right probability distribution -> think about
-        #this! For now, assume in steady-state regiem so a uniform distribution
-        #seems reasonable
+           
+            ## Nucleation        
+            #Based on probability of a nucleus being deposited (based on omega and area)
+            #Need to select from the right probability distribution -> think about
+            #this! For now, assume in steady-state regime so a uniform distribution
+            #seems reasonable
             NEW_NUCLEI = None
             Nuclei_flag = 0
         
@@ -419,7 +414,7 @@ for omega in omega_values:
             
             if randomnumber<=prob_nuc:
                 #generate a new nuclei on x,y,z surface
-                NEW_NUCLEI = np.array([[ new_weighted_x,  new_weighted_y, new_weighted_z, seed_radius]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
+                NEW_NUCLEI = np.array([[ findNewXYZ(areas, random_location)[0],  findNewXYZ(areas, random_location)[1], findNewXYZ(areas, random_location)[2], seed_radius]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
                 Nuclei_flag = 1  
             
             
