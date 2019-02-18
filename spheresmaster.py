@@ -179,7 +179,7 @@ def uniqueFileName(basename, ext):
 
 #after making a discrete grid of surface points, the next step is finding the area of boxes in that grid so that I can weight 
 #those areas for depositing nuclei
-def areaofIrregularQuad(l1,l2,l3,l4):
+def areaofIrregularQuad(point,l1,l2,l3,l4):
     '''area of a quadrilateral that is irregular, i.e. not a square/rectangle'''
     '''get all four lengths of the sides
     divide the quad into two triangles with a diagonal down the middle
@@ -251,27 +251,52 @@ def totalVolume_anotherWay():
 
 #Grows each nucleus according to inorganic rate law - calculates new r
 def growEachNucleus(nucleus_array):
-                '''After each timestep, grow each nucleus according to inorganic rate law defined above
-                Updates r with every iteration of time, and updates z if the nucleus is not located on the ground'''
-                #surface area of each hemisphere in um2 
-                SA = nucleus_array[:,3]*nucleus_array[:,3] * np.pi*4/2 
-                #mol per sphere
-                Delta_moles = Growth_Rate*SA*delta_t 
-                #um of growth to add
-                Delta_volume = Delta_moles*molarV_arag 
-                #volume of each hemisphere in um2
-                VOL = (nucleus_array[:,3]*nucleus_array[:,3]*nucleus_array[:,3] * np.pi*4/3)/2 
-                NEW_VOL = VOL + Delta_volume;
-                NEW_R = (NEW_VOL*3/4*2/np.pi)**(1/3)  
-                #new radius based on growth in this step is input back into the array
-                nucleus_array[:,3] = NEW_R  
-                #Need to update the z of nuclei that are on top of other nuclei as the nuclei beneath them grow higher
-                numberrows = np.size(nucleus_array[:,0])    
-                for row in range(numberrows):
-                    if nucleus_array[row,2] > 0:
-                        newz = getZElevation(nucleus_array[row,0], nucleus_array[row,1])
-                        nucleus_array[row,2] = newz
-                return sum(VOL)
+    '''After each timestep, grow each nucleus according to inorganic rate law defined above
+    Updates r with every iteration of time, and updates z if the nucleus is not located on the ground'''
+    #surface area of each hemisphere in um2 
+    SA = nucleus_array[:,3]*nucleus_array[:,3] * np.pi*4/2 
+    #mol per sphere
+    Delta_moles = Growth_Rate*SA*delta_t 
+    #um of growth to add
+    Delta_volume = Delta_moles*molarV_arag 
+    #volume of each hemisphere in um2
+    VOL = (nucleus_array[:,3]*nucleus_array[:,3]*nucleus_array[:,3] * np.pi*4/3)/2 
+    NEW_VOL = VOL + Delta_volume;
+    NEW_R = (NEW_VOL*3/4*2/np.pi)**(1/3)  
+    #new radius based on growth in this step is input back into the array
+    nucleus_array[:,3] = NEW_R  
+    #Need to update the z of nuclei that are on top of other nuclei as the nuclei beneath them grow higher
+    numberrows = np.size(nucleus_array[:,0])    
+    for row in range(numberrows):
+        if nucleus_array[row,2] > 0:
+            newz = getZElevation(nucleus_array[row,0], nucleus_array[row,1])
+            nucleus_array[row,2] = newz
+    return sum(VOL)
+
+#use distance formula to get lenths of all four sides of each box               
+##at the end of each row, I don't want it to wrap around to the next row
+#think I solved that issue by calculating the area row by row - from 0 to 99 for each x row
+#calculating the box areas moving from one side of the grid to the other, so calculating the area from 0 to 1 in x lengths, then from 1 to 2, and so on, so from 99 to 100 is the last one calculating and we don't want to calculate from 100 to anything, but simply move on to the next row
+#for this reason, we can just use arange ending in 100 because we don't want to actually use that number or the box that starts with that number
+#this loop provides the area of 10000 boxes in the grid with x lenght and y length equal to 100 in the array all_areas        
+def areasofEachCellinGrid(surfacegrid_points):
+    '''Uses the distance formula between the vertices of each box of the grid and calculates the 
+    area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
+    all_areas = []
+    for ones in np.arange(0,y_length*gridsize_multiplier):
+        
+        grid_range = np.array(np.arange(ones*x_length*gridsize_multiplier+ones,x_length*gridsize_multiplier + ones*x_length*gridsize_multiplier+ones))
+
+        for point in grid_range:
+            l1 = distanceFormula(surfacegrid_points[point,0],surfacegrid_points[point,1],surfacegrid_points[point,2], surfacegrid_points[point+1,0], surface_points[point+1,1], surfacegrid_points[point+1,2])
+            l2 = distanceFormula(surfacegrid_points[point+1,0], surfacegrid_points[point+1,1], surfacegrid_points[point+1,2], surfacegrid_points[point+(gridsize_multiplier*x_length+2),0],surfacegrid_points[point+(gridsize_multiplier*x_length+2),1],surfacegrid_points[point+(gridsize_multiplier*x_length+2),2])
+            l3 = distanceFormula(surfacegrid_points[point+(gridsize_multiplier*x_length+2),0],surfacegrid_points[point+(gridsize_multiplier*x_length+2),1],surfacegrid_points[point+(gridsize_multiplier*x_length+2),2], surfacegrid_points[point+(gridsize_multiplier*x_length+1),0], surfacegrid_points[point+(gridsize_multiplier*x_length+1),1], surfacegrid_points[point+(gridsize_multiplier*x_length+1),2])
+            l4 = distanceFormula(surfacegrid_points[point+(gridsize_multiplier*x_length+1),0], surfacegrid_points[point+(gridsize_multiplier*x_length+1),1], surfacegrid_points[point+(gridsize_multiplier*x_length+1),2], surfacegrid_points[point,0],surface_points[point,1],surfacegrid_points[point,2])            
+                  
+            area_cell = areaofIrregularQuad(point,l1,l2,l3,l4)
+            all_areas = np.append(all_areas,area_cell)
+    return all_areas
+
 
 #python version of timing
 #from: https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
@@ -343,37 +368,18 @@ for omega in omega_values:
             #The surface is made up of boxes and the vertices of the boxes are saved in the array surface_points
             surface_points = Discrete3dSurface(gridsizeinput_forsurface)
             
-            #use distance formula to get lenths of all four sides of each box
-               
-            ##at the end of each row, I don't want it to wrap around to the next row
-            #think I solved that issue by calculating the area row by row - from 0 to 99 for each x row
-            #calculating the box areas moving from one side of the grid to the other, so calculating the area from 0 to 1 in x lengths, then from 1 to 2, and so on, so from 99 to 100 is the last one calculating and we don't want to calculate from 100 to anything, but simply move on to the next row
-            #for this reason, we can just use arange ending in 100 because we don't want to actually use that number or the box that starts with that number
-            #this loop provides the area of 10000 boxes in the grid with x lenght and y length equal to 100 in the array all_areas        
-            all_areas = []
-            for ones in np.arange(0,y_length*gridsize_multiplier):
-              
-                grid_range = np.array(np.arange(ones*x_length*gridsize_multiplier+ones,x_length*gridsize_multiplier + ones*x_length*gridsize_multiplier+ones))
+            areas = areasofEachCellinGrid(surface_points)            
             
-                for point in grid_range:
-                    l1 = distanceFormula(surface_points[point,0],surface_points[point,1],surface_points[point,2], surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2])
-                    l2 = distanceFormula(surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2], surface_points[point+(gridsize_multiplier*x_length+2),0],surface_points[point+(gridsize_multiplier*x_length+2),1],surface_points[point+(gridsize_multiplier*x_length+2),2])
-                    l3 = distanceFormula(surface_points[point+(gridsize_multiplier*x_length+2),0],surface_points[point+(gridsize_multiplier*x_length+2),1],surface_points[point+(gridsize_multiplier*x_length+2),2], surface_points[point+(gridsize_multiplier*x_length+1),0], surface_points[point+(gridsize_multiplier*x_length+1),1], surface_points[point+(gridsize_multiplier*x_length+1),2])
-                    l4 = distanceFormula(surface_points[point+(gridsize_multiplier*x_length+1),0], surface_points[point+(gridsize_multiplier*x_length+1),1], surface_points[point+(gridsize_multiplier*x_length+1),2], surface_points[point,0],surface_points[point,1],surface_points[point,2])            
-                              
-                    area_cell = areaofIrregularQuad(l1,l2,l3,l4)
-                    all_areas = np.append(all_areas,area_cell)
-         
             #now want to be able to pick a point within each small cell, once that cell is picked to nucleate within
             #also want to be able to take the sum of all areas, then pick a number randomly from 0 to the sum, then find out which cell that number is referring to
-            sum_areas = sum(all_areas)
+            sum_areas = sum(areas)
             #pick an number randomly from 0 through sum_areas
             random_location = random.random()*sum_areas
              
             #go through the cell areas and add them up until you get to the value you generated in random_location
             which_cell_area = 0
             area_count = 0
-            for area in all_areas:
+            for area in areas:
                     
                 if which_cell_area <= random_location:
                     which_cell_area += area
