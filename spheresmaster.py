@@ -319,6 +319,29 @@ def findNewXYZ(areas_gridcells, random_location):
     new_weighted_z = getZElevation(new_weighted_x, new_weighted_y)  
     return new_weighted_x, new_weighted_y, new_weighted_z
 
+def findTimetoCoverGround(percentcoverage):
+    '''amount of time it takes to cover the ground to different percentages'''
+    time_groundcover_10 = [0]
+    time_groundcover_25 = [0]
+    time_groundcover_50 = [0]
+    time_groundcover_75 = [0]
+    time_groundcover_final = [0]
+    if percentcoverage_firstlayer > 10 and percentcoverage_firstlayer < 15:
+        time_groundcover_10 = np.append(time_groundcover_10, t)
+    
+    if percentcoverage_firstlayer > 25 and percentcoverage_firstlayer < 30:
+        time_groundcover_25 = np.append(time_groundcover_25, t) 
+    
+    if percentcoverage_firstlayer > 50 and percentcoverage_firstlayer < 55:
+        time_groundcover_50 = np.append(time_groundcover_50, t)    
+    
+    if percentcoverage_firstlayer > 75 and percentcoverage_firstlayer < 80:
+        time_groundcover_75 = np.append(time_groundcover_75, t)     
+
+    if percentcoverage_firstlayer > 90 and percentcoverage_firstlayer < 100:
+        time_groundcover_final = np.append(time_groundcover_final, t)
+    return time_groundcover_10, time_groundcover_25, time_groundcover_50, time_groundcover_75, time_groundcover_final 
+
 #python version of timing
 #from: https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
 start = timer()
@@ -370,11 +393,7 @@ for omega in omega_values:
         
         #recording the time step of each nuclei that is formed and the time that each percentage of the 2d yx grid is covered
         nuclei_timeofdeposition = [0]
-        time_groundcover_final = [0]
-        time_groundcover_10 = [0]
-        time_groundcover_25 = [0]
-        time_groundcover_50 = [0]
-        time_groundcover_75 = [0]
+        
         
         ttime = np.arange(0,max_t,delta_t)
         
@@ -416,35 +435,11 @@ for omega in omega_values:
                 #generate a new nuclei on x,y,z surface
                 NEW_NUCLEI = np.array([[ findNewXYZ(areas, random_location)[0],  findNewXYZ(areas, random_location)[1], findNewXYZ(areas, random_location)[2], seed_radius]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
                 Nuclei_flag = 1  
-            
-            
             #Nucleate on surface of sphere based on whole surface area of sphere and do
             #so randomly on sphere
-        
-            #for periodic boundary conditions, clone every nuclei into adjacent copies
-            #of the control volume (adjacent in X&Y, not Z) 
-            
-            #Check if Nuclei are within the volume of other spheres. Just check
-            #distance from center of each other sphere and compare to radius
             percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(NUCLEI[:,0],NUCLEI[:,1],NUCLEI[:,3])*100
             
-            
-            
-            if percentcoverage_firstlayer > 10 and percentcoverage_firstlayer < 15:
-                time_groundcover_10 = np.append(time_groundcover_10, t)
-                
-            if percentcoverage_firstlayer > 25 and percentcoverage_firstlayer < 30:
-                time_groundcover_25 = np.append(time_groundcover_25, t) 
-                
-            if percentcoverage_firstlayer > 50 and percentcoverage_firstlayer < 55:
-                time_groundcover_50 = np.append(time_groundcover_50, t)    
-                
-            if percentcoverage_firstlayer > 75 and percentcoverage_firstlayer < 80:
-                time_groundcover_75 = np.append(time_groundcover_75, t)     
-            
-            if percentcoverage_firstlayer > 90 and percentcoverage_firstlayer < 100:
-                time_groundcover_final = np.append(time_groundcover_final, t)
-            
+            time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
             #pick the percent coverage that you want to seed the ground with - nuclei won't be able to build on top of each other until this coverage percent of first layer is passed
             coverage_percent = 90
            
@@ -480,7 +475,7 @@ for omega in omega_values:
                 totalvol_1000 = totalVolume()
                 
             
-#Generate new sphere objects for each new nuclei
+
 
 #calculating volume of union of a family of spheres could be complicated.
 #Could do this seqentially with some recursion, get volume of first sphere,
@@ -627,11 +622,11 @@ if max_t >= 1000:
 if max_t >= 3000:
     file.write('\n' + 'Total Calculated Volume at 3000 s:' +str(totalvol_3000) + ' um3' + '\n')
 
-file.write('\n' + 'Time to Cover Ground 10%:' + str(time_groundcover_10) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 25%:' + str(time_groundcover_25) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 50%:' + str(time_groundcover_50) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 75%:' + str(time_groundcover_75) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 90%:' + str(time_groundcover_final) + 's' + '\n')
+file.write('\n' + 'Time to Cover Ground 10%:' + str(time_groundcoverage[0]) + 's' + '\n')
+file.write('\n' + 'Time to Cover Ground 25%:' + str(time_groundcoverage[1]) + 's' + '\n')
+file.write('\n' + 'Time to Cover Ground 50%:' + str(time_groundcoverage[2]) + 's' + '\n')
+file.write('\n' + 'Time to Cover Ground 75%:' + str(time_groundcoverage[3]) + 's' + '\n')
+file.write('\n' + 'Time to Cover Ground 90%:' + str(time_groundcoverage[4]) + 's' + '\n')
 file.write('\n' + 'Total Time:' + str(max_t) + ' s' + '\n')
 file.write('\n' + 'Average Time Step Between Depositions:' + str(np.average(time_between_dep)) + 's' + '\n')
 file.write('\n' + 'Number Nuclei on Ground Level:' + str(nuclei_ground_count) + '\n')
