@@ -249,6 +249,30 @@ def totalVolume_anotherWay():
             vol_total += vol_cell
     return vol_total 
 
+#Grows each nucleus according to inorganic rate law - calculates new r
+def growEachNucleus(nucleus_array):
+                '''After each timestep, grow each nucleus according to inorganic rate law defined above
+                Updates r with every iteration of time, and updates z if the nucleus is not located on the ground'''
+                #surface area of each hemisphere in um2 
+                SA = nucleus_array[:,3]*nucleus_array[:,3] * np.pi*4/2 
+                #mol per sphere
+                Delta_moles = Growth_Rate*SA*delta_t 
+                #um of growth to add
+                Delta_volume = Delta_moles*molarV_arag 
+                #volume of each hemisphere in um2
+                VOL = (nucleus_array[:,3]*nucleus_array[:,3]*nucleus_array[:,3] * np.pi*4/3)/2 
+                NEW_VOL = VOL + Delta_volume;
+                NEW_R = (NEW_VOL*3/4*2/np.pi)**(1/3)  
+                #new radius based on growth in this step is input back into the array
+                nucleus_array[:,3] = NEW_R  
+                #Need to update the z of nuclei that are on top of other nuclei as the nuclei beneath them grow higher
+                numberrows = np.size(nucleus_array[:,0])    
+                for row in range(numberrows):
+                    if nucleus_array[row,2] > 0:
+                        newz = getZElevation(nucleus_array[row,0], nucleus_array[row,1])
+                        nucleus_array[row,2] = newz
+                return sum(VOL)
+
 #python version of timing
 #from: https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
 start = timer()
@@ -270,27 +294,35 @@ seed_radius = 0.5  #µm radius
 #It is not clear that this bulk growth rate scales down to this scale
 omega_values = [60]
 
-## Simulation
-for omega in omega_values:
-    Growth_Rate = ((omega-1)**1.7)*(11*10E-9) #mol m-2 sec-1
-    Growth_Rate = Growth_Rate/1000/1000/1000/1000    #change units to mol/um/s
-
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
-    molarV_arag = 100.09/2.93*1E12
+molarV_arag = 100.09/2.93*1E12
 
 #Nucleation rate is also constant at constant Omega. 
 #J = Aexp(-balpha^3 / (ln(omega))^2) in nuclei  µm-2 sec-1
-    A = 1858506.76
-    Balpha3 = -19.44553408
-#nuclei/m2/s converted to nuclei/um2 for every 10 seconds
+A = 1858506.76
+Balpha3 = -19.44553408
+
+#The discrete surface grid is made up of boxes with sides of length gridsizeinput_forsurface
+#The gridsize_multiplier is a ratio that makes up for the sides not being 1
+gridsizeinput_forsurface = .75
+gridsize_multiplier = 1/gridsizeinput_forsurface
+
+## Simulation
+for omega in omega_values:
+    
+    Growth_Rate = ((omega-1)**1.7)*(11*10E-9) #mol m-2 sec-1
+    Growth_Rate = Growth_Rate/1000/1000/1000/1000    #change units to mol/um/s
+
+    #nuclei/m2/s converted to nuclei/um2 for every 10 seconds
     J_rate = A * np.exp(Balpha3/np.log(omega)**2)/1000/1000/1000/1000*10
 
+
     for max_t in maximum_t:
-#Start with one nuclei randomly distrubuted on the XY plane. 
+        #Start with one nuclei randomly distrubuted on the XY plane. 
         NUCLEI = np.array([[ random.random()*x_length,  random.random()*y_length, 0, seed_radius]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
         ##                       [x                                  y            z     radius]
         
-        #recording the time step of each nuclei that is formed
+        #recording the time step of each nuclei that is formed and the time that each percentage of the 2d yx grid is covered
         nuclei_timeofdeposition = [0]
         time_groundcover_final = [0]
         time_groundcover_10 = [0]
@@ -301,35 +333,14 @@ for omega in omega_values:
         ttime = np.arange(0,max_t,delta_t)
         
         for t in ttime:
-        ## Grow Spheres
-    #each sphere is described by a radius and an origin. Can keep this
-    #information in an array NUCLEI that grows in length with more nuclei.
-    
-    #After each timestep grow each sphere according to the inorganic rate law. 
-    #Have a function do this in the future and have it operate on the 
-    #whole NUCLEI array. Growth only depends on radius and is independent of
-    #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol m-2 s-1 and
-    #n=1.7
-            print(t)    
-            SA = NUCLEI[:,3]*NUCLEI[:,3] * np.pi*4/2  #surface area of each hemisphere in um2  
-            Delta_moles = Growth_Rate*SA*delta_t #mol per sphere
-            Delta_volume = Delta_moles*molarV_arag  #um of growth to add
-            VOL = (NUCLEI[:,3]*NUCLEI[:,3]*NUCLEI[:,3] * np.pi*4/3)/2 #volume of each hemisphere in um2
-            NEW_VOL = VOL + Delta_volume;
-            NEW_R = (NEW_VOL*3/4*2/np.pi)**(1/3)  
-            NUCLEI[:,3] = NEW_R             #new radius based on growth in this step is input back into the array
-          
-        
+            print(t)
+            ## Grow Spheres
+            #Each sphere is described by a radius and an origin. 
+            #This information saved in an array NUCLEI that grows in length with more nuclei.            
+            #After each timestep grow each sphere according to the inorganic rate law. 
+            growEachNucleus(NUCLEI)
             
-        #Need to update the z of nuclei that are on top of other nuclei as the nuclei beneath them grow higher
-            numberrows = np.size(NUCLEI[:,0])    
-            for row in range(numberrows):
-                if NUCLEI[row,2] > 0:
-                    newz = getZElevation(NUCLEI[row,0], NUCLEI[row,1])
-                    NUCLEI[row,2] = newz
-            
-            gridsizeinput_forsurface = .75
-            gridsize_multiplier = 1/gridsizeinput_forsurface
+            #The surface is made up of boxes and the vertices of the boxes are saved in the array surface_points
             surface_points = Discrete3dSurface(gridsizeinput_forsurface)
             
             #use distance formula to get lenths of all four sides of each box
@@ -571,7 +582,7 @@ total_volume = totalVolume()
 total_vol_2 = totalVolume_anotherWay()
 print('Total vol way 1:', total_volume)
 print('Total vol way 2:', total_vol_2)
-print('Total sum of nuclei vol:', sum(VOL))
+print('Total sum of nuclei vol:', growEachNucleus(NUCLEI))
 #density of nuclei on the ground
 nuclei_ground_count = 0
 for nucleus in range(len(NUCLEI)):
@@ -599,7 +610,7 @@ for nucleus in range(len(NUCLEI)):
 file.write('\n' + 'Omega:' + str(omega) + '\n')
 file.write('\n' + 'Total Number Nuclei:' +str(np.size(NUCLEI[:,0])) + '\n')    
 file.write('\n' + 'Total Calculated Volume:' +str(total_volume) + ' um3' + '\n')
-file.write('\n' + 'Actual Volume with Overlaps:' + str(sum(VOL)) + ' um3' + '\n')
+file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(NUCLEI)) + ' um3' + '\n')
 
 file.write('\n' + 'Percent of Ground Covered:' +str(percentfirstlayer) + '%' + '\n')
 if max_t >= 500:
