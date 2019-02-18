@@ -342,6 +342,12 @@ def findTimetoCoverGround(percentcoverage):
         time_groundcover_final = np.append(time_groundcover_final, t)
     return time_groundcover_10, time_groundcover_25, time_groundcover_50, time_groundcover_75, time_groundcover_final 
 
+dict_times_output = {}
+def outputAtCertainTimes(t):
+    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, and ratio of nuclei/growth'''    
+    dict_times_output[t] = np.size(NUCLEI[:,0]), percentcoverage_firstlayer, totalVolume(), np.size(NUCLEI[:,0])/totalVolume()
+    return dict_times_output
+
 #python version of timing
 #from: https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
 start = timer()
@@ -418,44 +424,18 @@ for omega in omega_values:
             if randomnumber<=prob_nuc:
                 #generate a new nuclei on x,y,z surface
                 NEW_NUCLEI = np.array([[ findNewXYZ(areas, random_location)[0],  findNewXYZ(areas, random_location)[1], findNewXYZ(areas, random_location)[2], seed_radius]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
-                Nuclei_flag = 1  
-
-            percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(NUCLEI[:,0],NUCLEI[:,1],NUCLEI[:,3])*100
-            #Record when ground is covered to certain percentages
-            time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
+                Nuclei_flag = 1              
             if Nuclei_flag == 1:  #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add                       
                 #adding the nuclei continuously so that they can be added on top of each other        
                 NUCLEI = np.append(NUCLEI, [NEW_NUCLEI[0,:]], axis=0)
                 print(NUCLEI)
-                nuclei_timeofdeposition = np.append(nuclei_timeofdeposition,t)
-          
-            if t == 500:
-                percentcoverage_500 = percentcoverage_firstlayer
-                totalvol_500 = totalVolume()
-                
-            if t == 3000:
-                percentcoverage_3000 = percentcoverage_firstlayer
-                totalvol_3000 = totalVolume()
+                nuclei_timeofdeposition = np.append(nuclei_timeofdeposition,t)              
             
-            if t == 1000:
-                percentcoverage_1000 = percentcoverage_firstlayer
-                totalvol_1000 = totalVolume()
-                
+            percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(NUCLEI[:,0],NUCLEI[:,1],NUCLEI[:,3])*100
+            #Record when ground is covered to certain percentages
+            time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
+            timed_output = outputAtCertainTimes(t)    
             
-
-
-#calculating volume of union of a family of spheres could be complicated.
-#Could do this seqentially with some recursion, get volume of first sphere,
-#then check if second sphere overlaps, if so get only the non overlapping
-#volume, then check if third sphere overlaps with first sphere or second
-#sphere, only get region not overlapping either, etc. Is there  numerical
-#integration we can do based on the union of the equations? Counting when IF
-#ANY?
-
-
-
-
-
 ###plotting spheres in 3d
 #
 fig = plt.figure()
