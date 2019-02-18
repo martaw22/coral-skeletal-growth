@@ -348,6 +348,16 @@ def outputAtCertainTimes(t):
     dict_times_output[t] = np.size(NUCLEI[:,0]), percentcoverage_firstlayer, totalVolume(), np.size(NUCLEI[:,0])/totalVolume()
     return dict_times_output
 
+#density of nuclei on the ground
+def nucleiGroundDensity():
+    '''total number of nuclei on the ground divided by ground area'''
+    nuclei_ground_count = 0
+    for nucleus in range(len(NUCLEI)):
+        if NUCLEI[nucleus,2] == 0:
+            nuclei_ground_count += 1
+    nuclei_density = nuclei_ground_count/(x_length*y_length)
+    return nuclei_ground_count, nuclei_density
+
 #python version of timing
 #from: https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
 start = timer()
@@ -459,15 +469,9 @@ for row in np.nditer(shape):
     y = r * np.outer(np.sin(u), np.sin(v))+NUCLEI[row-1,1] 
     z = r * np.outer(np.ones(np.size(u)), np.cos(v))
     ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
-   
-#    plt.pause(.001) 
-    
-#    if t == max_t-delta_t:                                                  #save the last timestep image, and this also keeps that plot open
-#fig.savefig('/Users/Marta/Documents/Python/nucleation_model_output/plots/modelnucleisphere_om' + str(omega) + '_' + str(max_t) + '.png')
+
 plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots/modelnucleisphere_om' + str(omega) + '_' + str(max_t) + '_',  'png')
 fig.savefig(plt1_name)
-        
-                                                                     #close all the other plots from the other timepoints - definitely do not keep them all open!
 plt.close()
             
             
@@ -493,49 +497,18 @@ ax.scatter(walls_back[:,0], walls_back[:,1], walls_back[:,2], c=Z_back, alpha=0.
 ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
 ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-#    plt.pause(.001)    
-#    if t == max_t-delta_t:                                                  #save the last timestep image, and this also keeps that plot open
-#fig.savefig('/Users/Marta/Documents/Python/nucleation_model_output/plots/modelnucleisurface_om' + str(omega) + '_' + str(max_t) +  '.png')
-
-
 plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_',  'png')
-fig.savefig(plt2_name)
-
-                                                                       #close all the other plots from the other timepoints - definitely do not keep them all open!
+fig.savefig(plt2_name)                                                                      
 plt.close()    
-    
-    #plt.show()
-####trying to save this 3d image - don't know if there's a file format that will let me, but can do one of two things: save data to a format and have separate file that just plots from saved data, makes it go faster to play with plots, or can use pickling, which creates a form of the plot that's interactive    
-#   https://stackoverflow.com/questions/7290370/store-and-reload-matplotlib-pyplot-object    
-#   https://stackoverflow.com/questions/29127593/trying-to-write-a-cpickle-object-but-get-a-write-attribute-type-error
-#    with open('/Users/Marta/Documents/Python/Plots/modelnucleisphere_om10.png', 'wb') as pickle_file:    
-#        pickle.dump(fig, pickle_file.pickle)
-#    
-#
-#      
-
-    ##So now we know the percent coverage by nuclei at a given time, and we can find the elevation at a given spot
-    ##Now: above a certain percent coverage, next time you generate a spot to nucleate on, you can put it at that spot with the z at the height of the nucleus in the first row        
-percentfirstlayer = getSampledPercentageAreaOccupiedByNuclei(NUCLEI[:,0],NUCLEI[:,1],NUCLEI[:,3])*100
-    
+        
     
 #Output parameters
 print('Number of nuclei:', np.size(NUCLEI[:,0]))
 total_volume = totalVolume()
-total_vol_2 = totalVolume_anotherWay()
 print('Total vol way 1:', total_volume)
-print('Total vol way 2:', total_vol_2)
 print('Total sum of nuclei vol:', growEachNucleus(NUCLEI))
-#density of nuclei on the ground
-nuclei_ground_count = 0
-for nucleus in range(len(NUCLEI)):
-    if NUCLEI[nucleus,2] == 0:
-        nuclei_ground_count += 1
-nuclei_density = nuclei_ground_count/(x_length*y_length)
 
-print("percent of surface covered by nuclei:", percentfirstlayer)   
-#print('percent of second layer covered by nuclei:', percentsecondlayer)
-#end of the timer function, at the very end of all the code
+
 
 #save the following information in a file: NUCLEI, time of deposition, omega, and time step
 filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_2/'+str(omega)+'_'+str(max_t)+'_', 'txt')
@@ -554,21 +527,6 @@ file.write('\n' + 'Omega:' + str(omega) + '\n')
 file.write('\n' + 'Total Number Nuclei:' +str(np.size(NUCLEI[:,0])) + '\n')    
 file.write('\n' + 'Total Calculated Volume:' +str(total_volume) + ' um3' + '\n')
 file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(NUCLEI)) + ' um3' + '\n')
-
-file.write('\n' + 'Percent of Ground Covered:' +str(percentfirstlayer) + '%' + '\n')
-if max_t >= 500:
-    file.write('\n' + 'Percent of Ground Covered at 500 s:' +str(percentcoverage_500) + '%' + '\n')
-if max_t >= 1000:    
-    file.write('\n' + 'Percent of Ground Covered at 1000 s:' +str(percentcoverage_1000) + '%' + '\n')
-if max_t >= 3000:
-    file.write('\n' + 'Percent of Ground Covered at 3000 s:' +str(percentcoverage_3000) + '%' + '\n')
-if max_t >= 500:    
-    file.write('\n' + 'Total Calculated Volume at 500 s:' +str(totalvol_500) + ' um3' + '\n')
-if max_t >= 1000:
-    file.write('\n' + 'Total Calculated Volume at 1000 s:' +str(totalvol_1000) + ' um3' + '\n')
-if max_t >= 3000:
-    file.write('\n' + 'Total Calculated Volume at 3000 s:' +str(totalvol_3000) + ' um3' + '\n')
-
 file.write('\n' + 'Time to Cover Ground 10%:' + str(time_groundcoverage[0]) + 's' + '\n')
 file.write('\n' + 'Time to Cover Ground 25%:' + str(time_groundcoverage[1]) + 's' + '\n')
 file.write('\n' + 'Time to Cover Ground 50%:' + str(time_groundcoverage[2]) + 's' + '\n')
@@ -576,9 +534,11 @@ file.write('\n' + 'Time to Cover Ground 75%:' + str(time_groundcoverage[3]) + 's
 file.write('\n' + 'Time to Cover Ground 90%:' + str(time_groundcoverage[4]) + 's' + '\n')
 file.write('\n' + 'Total Time:' + str(max_t) + ' s' + '\n')
 file.write('\n' + 'Average Time Step Between Depositions:' + str(np.average(time_between_dep)) + 's' + '\n')
-file.write('\n' + 'Number Nuclei on Ground Level:' + str(nuclei_ground_count) + '\n')
-file.write('\n' + 'Nuclei Ground Density:' + str(nuclei_density) + ' nuclei/um2' + '\n')
+file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity()[0]) + '\n')
+file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity()[1]) + ' nuclei/um2' + '\n')
 file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(NUCLEI[:,0])/total_volume) + '\n')
+for key in timed_output:
+    file.write(str(key) + ',' + str(timed_output[key]) + '\n')
 
 file.close()
     
