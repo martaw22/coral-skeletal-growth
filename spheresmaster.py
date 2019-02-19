@@ -13,26 +13,13 @@ import os
 import itertools
 
 
-'''main things to work on:
-1. Saving data from each run - save x, y, z, r and time of each nuclei - should be all you need - maybe 
-save each plot? - did this
-2. Clean up all of the code and annote better
-3. Add in any things that Alex and I talked about in terms of outputs
-
-Next things:
+'''Next things:
 1. Call this code from a different code and run it so that the time is not the input - it just runs until 
 you tell it to stop because the floor is covered to a certain extent
-2. Fix the aragonite growth rate
-3. Start working on the part of random distribution of nuclei/clustering
-4. Think about shape of nuclei'''
 
-'''Things to change or consider every round:
-1. Omega
-2. Timestep
-3. Ground coverage percent
-4. Change name for saving plots
-5. Maybe size of x,y,z'''
- 
+3. Start working on the part of random distribution of nuclei/clustering
+4. Think about shape of nuclei
+5. Check and make sure that you can't ever make a negative deposition'''
 
 #Function for determining if a given point intersects with any nucleus in nuclei    
 def doesPointIntersectAnyNucleus(x,y,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r):
@@ -100,13 +87,6 @@ def distanceFormula(x,y,z,x0,y0,z0):
     distance = np.sqrt((x-x0)**2+(y-y0)**2+(z-z0)**2)
     return distance
 
-def volumeofOverlappingSphereSections(x,y,z,x0,y0,z0,r0,r1):
-    '''calculate the volume of the overlapping parts of two spheres'''
-    h0 = r0*(1-(r0**2+distanceFormula(x,y,z,x0,y0,z0)**2-r1**2)/(2*r0*distanceFormula(x,y,z,x0,y0,z0)))
-    h1 = r1*(1-(r1**2+distanceFormula(x,y,z,x0,y0,z0)**2-r0**2)/(2*r1*distanceFormula(x,y,z,x0,y0,z0)))         
-           
-    volume = np.pi()/3*(3*r0*h0**2 - h0**3 + 3*r1*h1**2 - h1**3)
-    return volume
 
 ##Making a surface with discrete points in x,y,z space
 def Discrete3dSurface(gridsize):
@@ -220,34 +200,7 @@ def totalVolume(surface_points):
             Vol_total += Vol_square
             number_squares += 1
     return Vol_total
-    
-
-def totalVolume_anotherWay():
-    '''find the total volume under the surface by using the signed volume of a tetrahedron
-    this link is sort of useful: https://stackoverflow.com/questions/1406029/how-to-calculate-the-volume-of-a-3d-mesh-object-the-surface-of-which-is-made-up
-    again split each cell into two triangles
-    then you can find the volume of a part of one triangle by finding the volume of all the combinations of smaller tetrahedrons that can be made from the vertices'''
-    vol_total = 0        
-    for ones in np.arange(0,Y_LENGTH*GRIDSIZE_MULTIPLIER):
-   
-        grid_range = np.array(np.arange(ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones,X_LENGTH*GRIDSIZE_MULTIPLIER + ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones))
-
-        for point in grid_range:
-            point1 = [[surface_points[point,0],surface_points[point,1],surface_points[point,2]]]
-            point4 = [[surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2]]]
-            point3 = [[surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2]]]
-            point2 = [[surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2]]]
-            
-            tri1 = np.append(point1, point2, axis=0)
-            tri1 = np.array(np.append(tri1, point3, axis=0))
-            vol_tri1 = (1/6)*np.linalg.det(tri1)
-
-            tri2 = np.append(point3, point4, axis=0)
-            tri2 = np.array(np.append(tri2, point1, axis=0))
-            vol_tri2 = (1/6)*np.linalg.det(tri2)
-            vol_cell = vol_tri1+vol_tri2
-            vol_total += vol_cell
-    return vol_total 
+ 
 
 #Grows each nucleus according to inorganic rate law - calculates new r
 def growEachNucleus(nucleus_array):
@@ -344,8 +297,8 @@ def findTimetoCoverGround(percentcoverage):
 
 dict_times_output = {}
 def outputAtCertainTimes(t):
-    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, and ratio of nuclei/growth'''    
-    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, totalVolume(surface_points), np.size(nuclei[:,0])/totalVolume(surface_points)
+    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, and calcification'''    
+    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, totalVolume(surface_points), np.size(nuclei[:,0])/totalVolume(surface_points), totalVolume(surface_points)/(X_LENGTH*Y_LENGTH*t)
     return dict_times_output
 
 #density of nuclei on the ground
@@ -541,7 +494,7 @@ file.write('\n' + 'Average Time Step Between Depositions:' + str(np.average(time
 file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
 file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
 file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/total_volume) + '\n')
-for key in timed_output:
+for key in sorted(timed_output):
     file.write(str(key) + ',' + str(timed_output[key]) + '\n')
 
 file.close()
