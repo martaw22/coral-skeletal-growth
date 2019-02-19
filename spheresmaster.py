@@ -231,7 +231,8 @@ def growEachNucleus(nucleus_array):
 def areasofEachCellinGrid(surfacegrid_points):
     '''Uses the distance formula between the vertices of each box of the grid and calculates the 
     area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
-    all_areas = []
+    all_areas = np.zeros(X_LENGTH * Y_LENGTH)
+    area_count = 0
     for ones in np.arange(0,Y_LENGTH*GRIDSIZE_MULTIPLIER):
         
         grid_range = np.array(np.arange(ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones,X_LENGTH*GRIDSIZE_MULTIPLIER + ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones))
@@ -240,10 +241,11 @@ def areasofEachCellinGrid(surfacegrid_points):
             l1 = distanceFormula(surfacegrid_points[point,0],surfacegrid_points[point,1],surfacegrid_points[point,2], surfacegrid_points[point+1,0], surface_points[point+1,1], surfacegrid_points[point+1,2])
             l2 = distanceFormula(surfacegrid_points[point+1,0], surfacegrid_points[point+1,1], surfacegrid_points[point+1,2], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2])
             l3 = distanceFormula(surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2])
-            l4 = distanceFormula(surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2], surfacegrid_points[point,0],surface_points[point,1],surfacegrid_points[point,2])            
-                  
+            l4 = distanceFormula(surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2], surfacegrid_points[point,0],surface_points[point,1],surfacegrid_points[point,2])                              
             area_cell = areaofIrregularQuad(point,l1,l2,l3,l4)
-            all_areas = np.append(all_areas, area_cell)
+            print(area_cell)
+            all_areas[area_count] = area_cell
+            area_count += 1
     return all_areas
 
 def findNewXYZ(areas_gridcells, random_location):
@@ -252,7 +254,7 @@ def findNewXYZ(areas_gridcells, random_location):
     #go through the cell areas and add them up until you get to the value you generated in random_location
     which_cell_area = 0
     area_count = 0
-    for area in areas:
+    for area in areas_gridcells:
             if which_cell_area <= random_location:
                 which_cell_area += area
                 area_count += GRIDSIZEINPUT_FORSURFACE
@@ -312,7 +314,8 @@ def porosityofSkeleton(nuclei, volume, surface_points):
                 if doesPointIntersectAnyNucleus(surface_points[gridpoint,0],surface_points[gridpoint,1],zz, nuclei_x, nuclei_y, nuclei_z, nuclei_r) ==True:
                     numIntersecting = numIntersecting + 1
                 numPointsTested = numPointsTested + 1
-    porosity_percent = 1 - numIntersecting/numPointsTested
+    if numPointsTested > 0:            
+        porosity_percent = 1 - numIntersecting/numPointsTested
     return numIntersecting, numPointsTested, porosity_percent, volume*porosity_percent
 
 dict_times_output = {}
