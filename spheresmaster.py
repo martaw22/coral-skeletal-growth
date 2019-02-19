@@ -94,9 +94,7 @@ def Discrete3dSurface(gridsize):
     numPointsTested = 0
     surface_points = [[-100,-100,-100]]
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
-        
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
-            print(yy)
             zz = getZElevation(xx,yy)               
             surface_points = np.append(surface_points,[[xx,yy,zz]], axis=0)
                 #if doesPointIntersectAnyNucleus(xx,yy,zz,nuclei_xlayer, nuclei_ylayer, nuclei_zlayer, nuclei_rlayer) == True:
@@ -147,7 +145,6 @@ def wallsofGrid(gridsize):
 def uniqueFileName(basename, ext):
     '''Each time the code runs, it is saved with a unique file name'''
     actualname = "%s.%s" % (basename, ext)
-    print(actualname)
     c = itertools.count()
     while os.path.exists(actualname):
         actualname = "%s (%d).%s" % (basename, next(c), ext)
@@ -268,30 +265,33 @@ def findNewXYZ(areas_gridcells, random_location):
     new_weighted_z = getZElevation(new_weighted_x, new_weighted_y)  
     return new_weighted_x, new_weighted_y, new_weighted_z
 
-def findTimetoCoverGround(percentcoverage):
-    '''amount of time it takes to cover the ground to different percentages'''
-    time_groundcover_10 = [0]
-    time_groundcover_25 = [0]
-    time_groundcover_50 = [0]
-    time_groundcover_75 = [0]
-    time_groundcover_final = [0]
+time_groundcover_10 = []
+time_groundcover_25 = []
+time_groundcover_50 = []
+time_groundcover_75 = []
+time_groundcover_final = []
+
+def findTimetoCoverGround(percentcoverage_firstlayer):
+    '''amount of time it takes to cover the ground to different percentages'''  
     if percentcoverage_firstlayer > 10 and percentcoverage_firstlayer < 15:
-        time_groundcover_10 = np.append(time_groundcover_10, t)
+        time_groundcover_10.append(t)
     
     if percentcoverage_firstlayer > 25 and percentcoverage_firstlayer < 30:
-        time_groundcover_25 = np.append(time_groundcover_25, t) 
+        time_groundcover_25.append(t) 
     
     if percentcoverage_firstlayer > 50 and percentcoverage_firstlayer < 55:
-        time_groundcover_50 = np.append(time_groundcover_50, t)    
+        time_groundcover_50.append(t)    
     
     if percentcoverage_firstlayer > 75 and percentcoverage_firstlayer < 80:
-        time_groundcover_75 = np.append(time_groundcover_75, t)     
+        time_groundcover_75.append(t)     
 
     if percentcoverage_firstlayer > 90 and percentcoverage_firstlayer < 100:
-        time_groundcover_final = np.append(time_groundcover_final, t)
+        time_groundcover_final.append(t)
     return time_groundcover_10, time_groundcover_25, time_groundcover_50, time_groundcover_75, time_groundcover_final 
 
-def porosityofSkeleton(nuclei):
+
+
+def porosityofSkeleton(nuclei, volume):
     '''find the porosity by finding all of the places in the skeleton where there are no nuclei, 
     then subtracting that number from total volume'''
     numIntersecting = 0
@@ -305,12 +305,12 @@ def porosityofSkeleton(nuclei):
                          numIntersecting = numIntersecting + 1
                     numPointsTested = numPointsTested + 1
     porosity_percent = 1 - numIntersecting/numPointsTested
-    return numIntersecting, numPointsTested, porosity_percent, totalVolume(surface_points)*porosity_percent
+    return numIntersecting, numPointsTested, porosity_percent, volume*porosity_percent
 
 dict_times_output = {}
-def outputAtCertainTimes(t):
+def outputAtCertainTimes(t, volume):
     '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, porosity percent, and volume with porosity'''    
-    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, totalVolume(surface_points), np.size(nuclei[:,0])/totalVolume(surface_points), totalVolume(surface_points)/(X_LENGTH*Y_LENGTH*t), porosityofSkeleton(nuclei)[2], porosityofSkeleton(nuclei)[3]
+    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), porosityofSkeleton(nuclei, volume)[2], porosityofSkeleton(nuclei, volume)[3]
     return dict_times_output
 
 #density of nuclei on the ground
@@ -386,7 +386,9 @@ X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
 DELTA_T = 10 #time step in seconds
-maximum_t = [100]
+
+maximum_t = [200]
+
 
 #All nuclei start at a specified size = seed size 
 SEED_RADIUS = 0.5  #µm radius
@@ -395,7 +397,7 @@ SEED_RADIUS = 0.5  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [60]
+omega_values = [90]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -462,7 +464,8 @@ for omega in omega_values:
             percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(nuclei[:,0],nuclei[:,1],nuclei[:,3])*100
             #Record when ground is covered to certain percentages
             time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
-            timed_output = outputAtCertainTimes(t)    
+            volume = totalVolume(surface_points)
+            timed_output = outputAtCertainTimes(t, volume)    
             
         #plotting spheres in 3d            
         plot3DSpheres(nuclei, omega, max_t)
@@ -473,10 +476,6 @@ for omega in omega_values:
     
 #Output parameters
 print('Number of nuclei:', np.size(nuclei[:,0]))
-total_volume = totalVolume(surface_points)
-print('Total vol way 1:', total_volume)
-print('Total sum of nuclei vol:', growEachNucleus(nuclei))
-
 
 
 #save the following information in a file: nuclei, time of deposition, omega, and time step
