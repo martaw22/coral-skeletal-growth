@@ -23,8 +23,8 @@ you tell it to stop because the floor is covered to a certain extent
 
 #Function for determining if a given point intersects with any nucleus in nuclei    
 def doesPointIntersectAnyNucleus(x,y,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r):
-    "does a given x,y point intersect a nucleus?"
-    "compute distance from x,y to nucleus center and see if it's less than nucleus radius"    
+    '''does a given x,y point intersect a nucleus?
+    compute distance from x,y to nucleus center and see if it's less than nucleus radius'''    
 
     distance = np.sqrt((x-nuclei_x)**2 + (y-nuclei_y)**2 + (z-nuclei_z)**2)
     if np.any(distance <= nuclei_r):
@@ -39,16 +39,15 @@ def getSampledPercentageAreaOccupiedByNuclei(nuclei_xlayer, nuclei_ylayer, nucle
     "What is the area of the xy plane occupied by nuclei at each timepoint?"
     numIntersecting = 0
     numPointsTested = 0
-    for xx in range(X_LENGTH):
-        
-        for yy in range(Y_LENGTH):
-            
+    for xx in range(X_LENGTH+1):
+
+        for yy in range(Y_LENGTH+1):
+
             if doesPointIntersectAnyNucleus(xx,yy,0, nuclei_xlayer, nuclei_ylayer, 0, nuclei_rlayer) == True:
                                     
                 numIntersecting = numIntersecting + 1
             numPointsTested = numPointsTested + 1
-        yy = yy + 1
-        xx = xx + 1
+
     percentcoverage = numIntersecting/numPointsTested
     return percentcoverage
 
@@ -97,16 +96,13 @@ def Discrete3dSurface(gridsize):
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
         
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
-            
-            
+            print(yy)
             zz = getZElevation(xx,yy)               
             surface_points = np.append(surface_points,[[xx,yy,zz]], axis=0)
                 #if doesPointIntersectAnyNucleus(xx,yy,zz,nuclei_xlayer, nuclei_ylayer, nuclei_zlayer, nuclei_rlayer) == True:
                 
             numPointsTested = numPointsTested + 1
-        yy = yy + 1
-        xx = xx + 1
-        
+
     surface_points = np.delete(surface_points, 0, 0)
     return surface_points
 
@@ -294,6 +290,22 @@ def findTimetoCoverGround(percentcoverage):
     if percentcoverage_firstlayer > 90 and percentcoverage_firstlayer < 100:
         time_groundcover_final = np.append(time_groundcover_final, t)
     return time_groundcover_10, time_groundcover_25, time_groundcover_50, time_groundcover_75, time_groundcover_final 
+
+def porosityofSkeleton(nuclei):
+    '''find the porosity by finding all of the places in the skeleton where there are no nuclei, 
+    then subtracting that number from total volume'''
+    numIntersecting = 0
+    numPointsTested = 0
+    for xx in range(X_LENGTH):        
+        for yy in range(Y_LENGTH):
+            zz = getZElevation(xx, yy)
+            if zz > 0:
+               for z in np.arange(0,zz,0.1):
+                    if doesPointIntersectAnyNucleus(xx,yy,z, nuclei[:,0], nuclei[:,1], nuclei[:,2], nuclei[:,3]) ==True:
+                         numIntersecting = numIntersecting + 1
+                    numPointsTested = numPointsTested + 1
+    porosity_percent = 1 - numIntersecting/numPointsTested
+    return numIntersecting, numPointsTested, porosity_percent, totalVolume(surface_points)*porosity_percent
 
 dict_times_output = {}
 def outputAtCertainTimes(t):
