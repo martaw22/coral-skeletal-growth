@@ -72,8 +72,11 @@ def getZElevation(x,y):
     "the given point is x,y, and it loops through the nuclei matrix, checking to see if it overlaps with any nuclei - if it does, the height at that spot should be >0"
     highestZSeen = 0
     nucleisize = np.array(np.size(nuclei, axis=0))
-    for row in range(nucleisize):
-        height = getElevationonNucleus(x, y, nuclei[row,0], nuclei[row,1], nuclei[row, 3])
+    nuclei_x = nuclei[:,0]
+    nuclei_y = nuclei[:,1]
+    nuclei_r = nuclei[:,3]
+    for row in range(nucleisize):       
+        height = getElevationonNucleus(x, y, nuclei_x[row], nuclei_y[row], nuclei_r[row])
         
         if height > highestZSeen:
             highestZSeen = height
@@ -240,7 +243,7 @@ def areasofEachCellinGrid(surfacegrid_points):
             l4 = distanceFormula(surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2], surfacegrid_points[point,0],surface_points[point,1],surfacegrid_points[point,2])            
                   
             area_cell = areaofIrregularQuad(point,l1,l2,l3,l4)
-            all_areas = np.append(all_areas,area_cell)
+            all_areas = np.append(all_areas, area_cell)
     return all_areas
 
 def findNewXYZ(areas_gridcells, random_location):
@@ -296,12 +299,16 @@ def porosityofSkeleton(nuclei, volume):
     then subtracting that number from total volume'''
     numIntersecting = 0
     numPointsTested = 0
+    nuclei_x = nuclei[:,0]
+    nuclei_y = nuclei[:,1]
+    nuclei_z = nuclei[:,2]
+    nuclei_r = nuclei[:,3]
     for xx in range(X_LENGTH):        
         for yy in range(Y_LENGTH):
             zz = getZElevation(xx, yy)
             if zz > 0:
                for z in np.arange(0,zz,0.1):
-                    if doesPointIntersectAnyNucleus(xx,yy,z, nuclei[:,0], nuclei[:,1], nuclei[:,2], nuclei[:,3]) ==True:
+                    if doesPointIntersectAnyNucleus(xx,yy,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r) ==True:
                          numIntersecting = numIntersecting + 1
                     numPointsTested = numPointsTested + 1
     porosity_percent = 1 - numIntersecting/numPointsTested
@@ -450,10 +457,11 @@ for omega in omega_values:
             prob_nuc = X_LENGTH*Y_LENGTH*J_rate*DELTA_T
             if prob_nuc > 1:
                 print('ERROR: reduce time step size - nucleation too fast')            
-            randomnumber = random.random()            
+            randomnumber = random.random() 
+            new_coordinates = findNewXYZ(areas, random_location)
             if randomnumber<=prob_nuc:
                 #generate a new nuclei on x,y,z surface
-                new_nuclei = np.array([[ findNewXYZ(areas, random_location)[0],  findNewXYZ(areas, random_location)[1], findNewXYZ(areas, random_location)[2], SEED_RADIUS]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
+                new_nuclei = np.array([[ new_coordinates[0],  new_coordinates[1], new_coordinates[2], SEED_RADIUS]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
                 Nuclei_flag = 1              
             if Nuclei_flag == 1:  #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add                       
                 #adding the nuclei continuously so that they can be added on top of each other        
