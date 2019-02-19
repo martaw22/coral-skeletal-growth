@@ -252,19 +252,20 @@ def findNewXYZ(areas_gridcells, random_location):
     #go through the cell areas and add them up until you get to the value you generated in random_location
     which_cell_area = 0
     area_count = 0
-    for area in areas_gridcells:
+    for area in areas:
             if which_cell_area <= random_location:
                 which_cell_area += area
                 area_count += GRIDSIZEINPUT_FORSURFACE
     #finding the point1 of the square that is going to have the nucleus in it - point1 is determined by the  lowest 
     #x and y value pair of the four corners
-    point1_y = (area_count%(X_LENGTH*GRIDSIZE_MULTIPLIER))/GRIDSIZE_MULTIPLIER
+    area_count = area_count - GRIDSIZEINPUT_FORSURFACE
+    point1_y = (area_count%(Y_LENGTH*GRIDSIZE_MULTIPLIER))/GRIDSIZE_MULTIPLIER
     point1_x = (area_count - point1_y)/(X_LENGTH*GRIDSIZE_MULTIPLIER)
     #pick a point randomly in the (gridsize,gridsize) x,y box that has a vertice of point1 - basically making 
     #an assumption that weighting of area across a box this small is negligibly different
     #this is the new nucleation location on a surface! 
-    new_weighted_x = random.random()-GRIDSIZEINPUT_FORSURFACE + point1_x
-    new_weighted_y = random.random()-GRIDSIZEINPUT_FORSURFACE + point1_y    
+    new_weighted_x = random.random() + point1_x
+    new_weighted_y = random.random() + point1_y    
     new_weighted_z = getZElevation(new_weighted_x, new_weighted_y)  
     return new_weighted_x, new_weighted_y, new_weighted_z
 
@@ -294,7 +295,7 @@ def findTimetoCoverGround(percentcoverage_firstlayer):
 
 
 
-def porosityofSkeleton(nuclei, volume):
+def porosityofSkeleton(nuclei, volume, surface_points):
     '''find the porosity by finding all of the places in the skeleton where there are no nuclei, 
     then subtracting that number from total volume'''
     numIntersecting = 0
@@ -303,21 +304,21 @@ def porosityofSkeleton(nuclei, volume):
     nuclei_y = nuclei[:,1]
     nuclei_z = nuclei[:,2]
     nuclei_r = nuclei[:,3]
-    for xx in range(X_LENGTH):        
-        for yy in range(Y_LENGTH):
-            zz = getZElevation(xx, yy)
-            if zz > 0:
-               for z in np.arange(0,zz,0.1):
-                    if doesPointIntersectAnyNucleus(xx,yy,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r) ==True:
-                         numIntersecting = numIntersecting + 1
-                    numPointsTested = numPointsTested + 1
+    
+    for gridpoint in range(np.size(surface_points[:,0])):
+        z = surface_points[gridpoint, 2]
+        if z > 0:
+            for zz in np.arange(0,z,0.1):
+                if doesPointIntersectAnyNucleus(surface_points[gridpoint,0],surface_points[gridpoint,1],zz, nuclei_x, nuclei_y, nuclei_z, nuclei_r) ==True:
+                    numIntersecting = numIntersecting + 1
+                numPointsTested = numPointsTested + 1
     porosity_percent = 1 - numIntersecting/numPointsTested
     return numIntersecting, numPointsTested, porosity_percent, volume*porosity_percent
 
 dict_times_output = {}
 def outputAtCertainTimes(t, volume):
     '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, porosity percent, and volume with porosity'''    
-    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), porosityofSkeleton(nuclei, volume)[2], porosityofSkeleton(nuclei, volume)[3]
+    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), porosityofSkeleton(nuclei, volume, surface_points)[2], porosityofSkeleton(nuclei, volume, surface_points)[3]
     return dict_times_output
 
 #density of nuclei on the ground
@@ -416,7 +417,7 @@ BALPHA3 = -19.44553408
 
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
 #The GRIDSIZE_MULTIPLIER is a ratio that makes up for the sides not being 1
-GRIDSIZEINPUT_FORSURFACE = .75
+GRIDSIZEINPUT_FORSURFACE = 1
 GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 
 ## Simulation
