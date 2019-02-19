@@ -309,8 +309,8 @@ def porosityofSkeleton(nuclei):
 
 dict_times_output = {}
 def outputAtCertainTimes(t):
-    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, and calcification'''    
-    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, totalVolume(surface_points), np.size(nuclei[:,0])/totalVolume(surface_points), totalVolume(surface_points)/(X_LENGTH*Y_LENGTH*t)
+    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, porosity percent, and volume with porosity'''    
+    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, totalVolume(surface_points), np.size(nuclei[:,0])/totalVolume(surface_points), totalVolume(surface_points)/(X_LENGTH*Y_LENGTH*t), porosityofSkeleton(nuclei)[2], porosityofSkeleton(nuclei)[3]
     return dict_times_output
 
 #density of nuclei on the ground
