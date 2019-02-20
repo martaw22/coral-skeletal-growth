@@ -228,22 +228,22 @@ def growEachNucleus(nucleus_array):
 #calculating the box areas moving from one side of the grid to the other, so calculating the area from 0 to 1 in x lengths, then from 1 to 2, and so on, so from 99 to 100 is the last one calculating and we don't want to calculate from 100 to anything, but simply move on to the next row
 #for this reason, we can just use arange ending in 100 because we don't want to actually use that number or the box that starts with that number
 #this loop provides the area of 10000 boxes in the grid with x lenght and y length equal to 100 in the array all_areas        
-def areasofEachCellinGrid(surfacegrid_points):
+def areasofEachCellinGrid(surface_points):
     '''Uses the distance formula between the vertices of each box of the grid and calculates the 
     area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
-    all_areas = np.zeros(X_LENGTH * Y_LENGTH)
+    all_areas = np.zeros(X_LENGTH/GRIDSIZEINPUT_FORSURFACE * Y_LENGTH/GRIDSIZEINPUT_FORSURFACE)
     area_count = 0
     for ones in np.arange(0,Y_LENGTH*GRIDSIZE_MULTIPLIER):
         
         grid_range = np.array(np.arange(ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones,X_LENGTH*GRIDSIZE_MULTIPLIER + ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones))
 
         for point in grid_range:
-            l1 = distanceFormula(surfacegrid_points[point,0],surfacegrid_points[point,1],surfacegrid_points[point,2], surfacegrid_points[point+1,0], surface_points[point+1,1], surfacegrid_points[point+1,2])
-            l2 = distanceFormula(surfacegrid_points[point+1,0], surfacegrid_points[point+1,1], surfacegrid_points[point+1,2], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2])
-            l3 = distanceFormula(surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2])
-            l4 = distanceFormula(surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surfacegrid_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2], surfacegrid_points[point,0],surface_points[point,1],surfacegrid_points[point,2])                              
+            l1 = distanceFormula(surface_points[point,0],surface_points[point,1],surface_points[point,2], surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2])
+            l2 = distanceFormula(surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2])
+            l3 = distanceFormula(surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2])
+            l4 = distanceFormula(surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2], surface_points[point,0],surface_points[point,1],surface_points[point,2])                              
             area_cell = areaofIrregularQuad(point,l1,l2,l3,l4)
-            print(area_cell)
+            
             all_areas[area_count] = area_cell
             area_count += 1
     return all_areas
@@ -420,7 +420,8 @@ BALPHA3 = -19.44553408
 
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
 #The GRIDSIZE_MULTIPLIER is a ratio that makes up for the sides not being 1
-GRIDSIZEINPUT_FORSURFACE = 1
+#Right now - have to pick a multiple of 0.5 for the code to work
+GRIDSIZEINPUT_FORSURFACE = .5
 GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 
 ## Simulation
