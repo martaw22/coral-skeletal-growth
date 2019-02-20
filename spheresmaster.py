@@ -95,16 +95,15 @@ def Discrete3dSurface(gridsize):
     '''querying every integer point in the x,y,z box to determine where the surface is
     - put in the size of the walls of each grid in the surface as the input'''
     numPointsTested = 0
-    surface_points = [[-100,-100,-100]]
+    surface_points = np.zeros(((X_LENGTH/gridsize + 1) * (Y_LENGTH/gridsize + 1), 3))
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
-            zz = getZElevation(xx,yy)               
-            surface_points = np.append(surface_points,[[xx,yy,zz]], axis=0)
-                #if doesPointIntersectAnyNucleus(xx,yy,zz,nuclei_xlayer, nuclei_ylayer, nuclei_zlayer, nuclei_rlayer) == True:
-                
+            zz = getZElevation(xx,yy)
+            print(xx, yy, zz)  
+            surface_points[numPointsTested][0] = xx
+            surface_points[numPointsTested][1] = yy
+            surface_points[numPointsTested][2] = zz
             numPointsTested = numPointsTested + 1
-
-    surface_points = np.delete(surface_points, 0, 0)
     return surface_points
 
 #making a function to make arrays of the walls of the grid that will grow with the nuclei that touch the edge of the grid
@@ -421,7 +420,7 @@ BALPHA3 = -19.44553408
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
 #The GRIDSIZE_MULTIPLIER is a ratio that makes up for the sides not being 1
 #Right now - have to pick a multiple of 0.5 for the code to work
-GRIDSIZEINPUT_FORSURFACE = .5
+GRIDSIZEINPUT_FORSURFACE = 1
 GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 
 ## Simulation
