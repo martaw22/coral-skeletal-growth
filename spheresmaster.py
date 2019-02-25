@@ -56,8 +56,7 @@ def getSampledPercentageAreaOccupiedByNuclei(nuclei_xlayer, nuclei_ylayer, nucle
 def getElevationonNucleus(x,y,x0,y0,r):
     "want to measure the height of a nucleus from any point within the radius"
     "Calculated z based on trig of point on edge of sphere, which is related to radius, x, y, and two angles theta and phi"
-    "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"    
-    #z = r * np.sqrt((r**2 - np.absolute((y-y0)**2)-np.absolute((x-x0)**2))/(r**2))        
+    "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"          
     inside_equation = r**2-(x-x0)**2-(y-y0)**2         
     if inside_equation <= 0:
         z = 0
@@ -98,8 +97,7 @@ def Discrete3dSurface(gridsize):
     surface_points = np.zeros(((X_LENGTH/gridsize + 1) * (Y_LENGTH/gridsize + 1), 3))
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
-            zz = getZElevation(xx,yy)
-            print(xx, yy, zz)  
+            zz = getZElevation(xx,yy) 
             surface_points[numPointsTested][0] = xx
             surface_points[numPointsTested][1] = yy
             surface_points[numPointsTested][2] = zz
@@ -315,13 +313,9 @@ def porosityofSkeleton(nuclei, volume, surface_points):
                 numPointsTested = numPointsTested + 1
     if numPointsTested > 0:            
         porosity_percent = 1 - numIntersecting/numPointsTested
+    else:
+        porosity_percent = 0
     return numIntersecting, numPointsTested, porosity_percent, volume*porosity_percent
-
-dict_times_output = {}
-def outputAtCertainTimes(t, volume):
-    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, porosity percent, and volume with porosity'''    
-    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), porosityofSkeleton(nuclei, volume, surface_points)[2], porosityofSkeleton(nuclei, volume, surface_points)[3]
-    return dict_times_output
 
 #density of nuclei on the ground
 def nucleiGroundDensity(nuclei):
@@ -332,6 +326,14 @@ def nucleiGroundDensity(nuclei):
             nuclei_ground_count += 1
     nuclei_density = nuclei_ground_count/(X_LENGTH*Y_LENGTH)
     return nuclei_ground_count, nuclei_density
+
+dict_times_output = {}
+def outputAtCertainTimes(t, volume):
+    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count'''    
+    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), nucleiGroundDensity(nuclei)[0]
+    return dict_times_output
+
+
 
 def plot3DSpheres(nuclei, omega, max_t):
     '''plotting hemispheres for each nucleus'''            
@@ -356,7 +358,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots/modelnucleisphere_om' + str(omega) + '_' + str(max_t) + '_',  'png')
+    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_3/modelnucleisphere_om' + str(omega) + '_' + str(max_t) + '_',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -380,7 +382,7 @@ def plotSurfaceGrid(nuclei, omega, max_t):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_',  'png')
+    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_3/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -395,9 +397,9 @@ start = timer()
 X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 10 #time step in seconds
+DELTA_T = 150 #time step in seconds
 
-maximum_t = [200]
+maximum_t = [40000]
 
 
 #All nuclei start at a specified size = seed size 
@@ -407,7 +409,7 @@ SEED_RADIUS = 0.5  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [90]
+omega_values = [10]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -486,39 +488,39 @@ for omega in omega_values:
    
         
     
-#Output parameters
-print('Number of nuclei:', np.size(nuclei[:,0]))
-
-
-#save the following information in a file: nuclei, time of deposition, omega, and time step
-filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_2/'+str(omega)+'_'+str(max_t)+'_', 'txt')
-
-file = open(filename, 'a')
-file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
-time_between_dep = []
-for nucleus in range(len(nuclei)):
-    file.write(str(nuclei[nucleus]) + ', ')
-    time_dep = nuclei_timeofdeposition[nucleus]
-    file.write(str(time_dep) + ', ')
-    file.write(str(DELTA_T) + '\n')
-    if nucleus is not 0:
-        time_between_dep = np.append(time_between_dep, time_dep - nuclei_timeofdeposition[nucleus-1])
-file.write('\n' + 'Omega:' + str(omega) + '\n')
-file.write('\n' + 'Total Number Nuclei:' +str(np.size(nuclei[:,0])) + '\n')    
-file.write('\n' + 'Total Calculated Volume:' +str(total_volume) + ' um3' + '\n')
-file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(nuclei)) + ' um3' + '\n')
-file.write('\n' + 'Time to Cover Ground 10%:' + str(time_groundcoverage[0]) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 25%:' + str(time_groundcoverage[1]) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 50%:' + str(time_groundcoverage[2]) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 75%:' + str(time_groundcoverage[3]) + 's' + '\n')
-file.write('\n' + 'Time to Cover Ground 90%:' + str(time_groundcoverage[4]) + 's' + '\n')
-file.write('\n' + 'Total Time:' + str(max_t) + ' s' + '\n')
-file.write('\n' + 'Average Time Step Between Depositions:' + str(np.average(time_between_dep)) + 's' + '\n')
-file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
-file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
-file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/total_volume) + '\n')
-for key in sorted(timed_output):
-    file.write(str(key) + ',' + str(timed_output[key]) + '\n')
+    #Output parameters
+    print('Number of nuclei:', np.size(nuclei[:,0]))
+    
+    
+    #save the following information in a file: nuclei, time of deposition, omega, and time step
+    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_3/'+str(omega)+'_'+str(max_t)+'_', 'txt')
+    
+    file = open(filename, 'a')
+    file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
+    time_between_dep = []
+    for nucleus in range(len(nuclei)):
+        file.write(str(nuclei[nucleus]) + ', ')
+        time_dep = nuclei_timeofdeposition[nucleus]
+        file.write(str(time_dep) + ', ')
+        file.write(str(DELTA_T) + '\n')
+        if nucleus is not 0:
+            time_between_dep = np.append(time_between_dep, time_dep - nuclei_timeofdeposition[nucleus-1])
+    file.write('\n' + 'Omega:' + str(omega) + '\n')
+    file.write('\n' + 'Total Number Nuclei:' +str(np.size(nuclei[:,0])) + '\n')    
+    file.write('\n' + 'Total Calculated Volume:' +str(volume) + ' um3' + '\n')
+    file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(nuclei)) + ' um3' + '\n')
+    file.write('\n' + 'Time to Cover Ground 10%:' + str(time_groundcoverage[0]) + 's' + '\n')
+    file.write('\n' + 'Time to Cover Ground 25%:' + str(time_groundcoverage[1]) + 's' + '\n')
+    file.write('\n' + 'Time to Cover Ground 50%:' + str(time_groundcoverage[2]) + 's' + '\n')
+    file.write('\n' + 'Time to Cover Ground 75%:' + str(time_groundcoverage[3]) + 's' + '\n')
+    file.write('\n' + 'Time to Cover Ground 90%:' + str(time_groundcoverage[4]) + 's' + '\n')
+    file.write('\n' + 'Total Time:' + str(max_t) + ' s' + '\n')
+    file.write('\n' + 'Average Time Step Between Depositions:' + str(np.average(time_between_dep)) + 's' + '\n')
+    file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
+    file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
+    file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/volume) + '\n')
+    for key in sorted(timed_output):
+        file.write(str(key) + ',' + str(timed_output[key]) + '\n')
 
 file.close()
     
