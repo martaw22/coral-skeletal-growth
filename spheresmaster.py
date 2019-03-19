@@ -333,7 +333,20 @@ def outputAtCertainTimes(t, volume):
     dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), nucleiGroundDensity(nuclei)[0]
     return dict_times_output
 
-
+def verticalExtension(max_height, surface_points, max_t):
+    '''Counts the zs at every iteration that are above or equal to a certain arbitrary height that is chosen for each omega - if
+    90% of the zs are higher than or equal to that height, it divides by amount of time it took to get that high, resultin gin vertical 
+    extension'''  
+    z_count = 0        
+    for z in surface_points[:,2]:
+        if z >= max_height:
+            z_count += 1
+        if z_count >= 0.9 * len(surface_points[:,2]):
+            vertical_extension = max_height/max_t
+        else:
+            vertical_extension = 0
+    return vertical_extension
+            
 
 def plot3DSpheres(nuclei, omega, max_t):
     '''plotting hemispheres for each nucleus'''            
@@ -358,7 +371,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_3/modelnucleisphere_om' + str(omega) + '_' + str(max_t) + '_',  'png')
+    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_3/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -392,15 +405,19 @@ def plotSurfaceGrid(nuclei, omega, max_t):
 #from: https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
 start = timer()
 
-##USER DEFINED STUFF
+#####################################################################################
+########################USER DEFINED STUFF
 #Define the dimensions of a control volume in microns:
 X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 150 #time step in seconds
+DELTA_T = 10 #time step in seconds
 
-maximum_t = [40000]
+maximum_t = [100]
 
+#max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
+#by the first layer of nuclei on the ground
+max_height = 50
 
 #All nuclei start at a specified size = seed size 
 SEED_RADIUS = 0.5  #µm radius
@@ -409,7 +426,7 @@ SEED_RADIUS = 0.5  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [10]
+omega_values = [90]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -425,12 +442,13 @@ BALPHA3 = -19.44553408
 GRIDSIZEINPUT_FORSURFACE = 1
 GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 
-## Simulation
+###############################################################################################
+################## Simulation
 for omega in omega_values:    
     Growth_Rate = ((omega-1)**1.7)*(11*10E-9) #mol m-2 sec-1
-    Growth_Rate = Growth_Rate/1000/1000/1000/1000    #change units to mol/um/s
+    Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
     #nuclei/m2/s converted to nuclei/um2 for every 10 seconds
-    J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000*10
+    J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000*10 
     for max_t in maximum_t:
         #Start with one nuclei randomly distrubuted on the XY plane. 
         nuclei = np.array([[ random.random()*X_LENGTH,  random.random()*Y_LENGTH, 0, SEED_RADIUS]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
@@ -479,6 +497,7 @@ for omega in omega_values:
             #Record when ground is covered to certain percentages
             time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
             volume = totalVolume(surface_points)
+            vertical_extension = verticalExtension(max_height, surface_points, max_t)
             timed_output = outputAtCertainTimes(t, volume)    
             
         #plotting spheres in 3d            
@@ -506,6 +525,7 @@ for omega in omega_values:
         if nucleus is not 0:
             time_between_dep = np.append(time_between_dep, time_dep - nuclei_timeofdeposition[nucleus-1])
     file.write('\n' + 'Omega:' + str(omega) + '\n')
+    #file.write('\n' + '.5J' + '\n' )
     file.write('\n' + 'Total Number Nuclei:' +str(np.size(nuclei[:,0])) + '\n')    
     file.write('\n' + 'Total Calculated Volume:' +str(volume) + ' um3' + '\n')
     file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(nuclei)) + ' um3' + '\n')
@@ -519,6 +539,7 @@ for omega in omega_values:
     file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
     file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
     file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/volume) + '\n')
+    file.write('\n' + 'Vertical Extension 90%:' + str(vertical_extension) + '\n')
     for key in sorted(timed_output):
         file.write(str(key) + ',' + str(timed_output[key]) + '\n')
 
