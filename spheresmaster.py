@@ -56,9 +56,9 @@ def getSampledPercentageAreaOccupiedByNuclei(nuclei_xlayer, nuclei_ylayer, nucle
 def getElevationonNucleus(x,y,x0,y0,z0,r):
     "want to measure the height of a nucleus from any point within the radius"
     "Calculated z based on trig of point on edge of sphere, which is related to radius, x, y, and two angles theta and phi"
-    "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"          
-    inside_equation = r**2-(x-x0)**2-(y-y0)**2    
-         
+    "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"   
+    '''This checks the relative height of the nucleus, meaning it adds the z value to the radius, essentially, to get the overall height'''       
+    inside_equation = r**2-(x-x0)**2-(y-y0)**2             
     if inside_equation <= 0:
         z = 0
     else:
@@ -67,8 +67,19 @@ def getElevationonNucleus(x,y,x0,y0,z0,r):
         else:
             z = np.sqrt(r**2-(x-x0)**2-(y-y0)**2) + z0
     return z
-    
-       
+
+def getElevationUnderNucleus(x,y,x0,y0,r):
+    "want to measure the height of a nucleus from any point within the radius"
+    "Calculated z based on trig of point on edge of sphere, which is related to radius, x, y, and two angles theta and phi"
+    "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"   
+    '''This checks the relative height of the nucleus, meaning it adds the z value to the radius, essentially, to get the overall height'''       
+    inside_equation = r**2-(x-x0)**2-(y-y0)**2             
+    if inside_equation <= 0:
+        z = 0
+    else:
+        z = np.sqrt(r**2-(x-x0)**2-(y-y0)**2)
+    return z
+
     
 def getZElevation(x,y):
     "want to know what the elevation of a nucleus is at a given point"  
@@ -83,8 +94,21 @@ def getZElevation(x,y):
         height = getElevationonNucleus(x, y, nuclei_x[row], nuclei_y[row], nuclei_z[row], nuclei_r[row])
         if height > highestZSeen:
             highestZSeen = height
+    return highestZSeen     
 
-    return highestZSeen            
+def getZElevationUnderNucleus(x,y):
+    "want to know what the elevation of a nucleus is at a given point"  
+    "the given point is x,y, and it loops through the nuclei matrix, checking to see if it overlaps with any nuclei - if it does, the height at that spot should be >0"
+    highestZSeen = 0
+    nucleisize = np.array(np.size(nuclei, axis=0))
+    nuclei_x = nuclei[:,0]
+    nuclei_y = nuclei[:,1]    
+    nuclei_r = nuclei[:,3]
+    for row in range(nucleisize):       
+        height = getElevationUnderNucleus(x, y, nuclei_x[row], nuclei_y[row], nuclei_r[row])
+        if height > highestZSeen:
+            highestZSeen = height
+    return highestZSeen        
 
 ##doing the weighting of areas that are within nuclei to account for surface area
 def distanceFormula(x,y,z,x0,y0,z0):
@@ -219,7 +243,7 @@ def growEachNucleus(nucleus_array):
     numberrows = np.size(nucleus_array[:,0])    
     for row in range(numberrows):
         if nucleus_array[row,2] > 0:
-            newz = getZElevation(nucleus_array[row,0], nucleus_array[row,1])
+            newz = getZElevationUnderNucleus(nucleus_array[row,0], nucleus_array[row,1])
             nucleus_array[row,2] = newz
     return sum(VOL)
 
@@ -420,7 +444,7 @@ Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
 DELTA_T = 10 #time step in seconds
 
-maximum_t = [1000]
+maximum_t = [3000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -504,7 +528,6 @@ for omega in omega_values:
             #Record when ground is covered to certain percentages
             time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
             volume = totalVolume(surface_points)
-            #vertical_extension = verticalExtension(max_height, surface_points, max_t)
             timed_output = outputAtCertainTimes(t, volume)    
             
         #plotting spheres in 3d            
@@ -546,7 +569,6 @@ for omega in omega_values:
     file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
     file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
     file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/volume) + '\n')
-    #file.write('\n' + 'Vertical Extension 90%:' + str(vertical_extension) + '\n')
     for key in sorted(timed_output):
         file.write('\n' + str(key) + ',' + str(timed_output[key]) + '\n')
 
