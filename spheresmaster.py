@@ -53,15 +53,19 @@ def getSampledPercentageAreaOccupiedByNuclei(nuclei_xlayer, nuclei_ylayer, nucle
 
 ##Question: what is the z elevation at a given point of the potential nuclei there?
 
-def getElevationonNucleus(x,y,x0,y0,r):
+def getElevationonNucleus(x,y,x0,y0,z0,r):
     "want to measure the height of a nucleus from any point within the radius"
     "Calculated z based on trig of point on edge of sphere, which is related to radius, x, y, and two angles theta and phi"
     "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"          
-    inside_equation = r**2-(x-x0)**2-(y-y0)**2         
+    inside_equation = r**2-(x-x0)**2-(y-y0)**2    
+         
     if inside_equation <= 0:
         z = 0
     else:
-        z = np.sqrt(r**2-(x-x0)**2-(y-y0)**2)
+        if z0 == 0:   
+            z = np.sqrt(r**2-(x-x0)**2-(y-y0)**2)
+        else:
+            z = np.sqrt(r**2-(x-x0)**2-(y-y0)**2) + z0
     return z
     
        
@@ -73,10 +77,10 @@ def getZElevation(x,y):
     nucleisize = np.array(np.size(nuclei, axis=0))
     nuclei_x = nuclei[:,0]
     nuclei_y = nuclei[:,1]
+    nuclei_z = nuclei[:,2]
     nuclei_r = nuclei[:,3]
     for row in range(nucleisize):       
-        height = getElevationonNucleus(x, y, nuclei_x[row], nuclei_y[row], nuclei_r[row])
-        
+        height = getElevationonNucleus(x, y, nuclei_x[row], nuclei_y[row], nuclei_z[row], nuclei_r[row])
         if height > highestZSeen:
             highestZSeen = height
 
@@ -327,12 +331,6 @@ def nucleiGroundDensity(nuclei):
     nuclei_density = nuclei_ground_count/(X_LENGTH*Y_LENGTH)
     return nuclei_ground_count, nuclei_density
 
-dict_times_output = {}
-def outputAtCertainTimes(t, volume):
-    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count'''    
-    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), nucleiGroundDensity(nuclei)[0]
-    return dict_times_output
-
 def verticalExtension(max_height, surface_points, max_t):
     '''Counts the zs at every iteration that are above or equal to a certain arbitrary height that is chosen for each omega - if
     90% of the zs are higher than or equal to that height, it divides by amount of time it took to get that high, resultin gin vertical 
@@ -346,6 +344,15 @@ def verticalExtension(max_height, surface_points, max_t):
         else:
             vertical_extension = 0
     return vertical_extension
+
+dict_times_output = {}
+def outputAtCertainTimes(t, volume):
+    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count, vertical extension rate'''  
+    vertical_extension = verticalExtension(max_height, surface_points, max_t)
+    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), nucleiGroundDensity(nuclei)[0], vertical_extension
+    return dict_times_output
+
+
             
 
 def plot3DSpheres(nuclei, omega, max_t):
@@ -413,11 +420,11 @@ Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
 DELTA_T = 10 #time step in seconds
 
-maximum_t = [100]
+maximum_t = [1000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
-max_height = 50
+max_height = 35
 
 #All nuclei start at a specified size = seed size 
 SEED_RADIUS = 0.5  #µm radius
@@ -497,7 +504,7 @@ for omega in omega_values:
             #Record when ground is covered to certain percentages
             time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
             volume = totalVolume(surface_points)
-            vertical_extension = verticalExtension(max_height, surface_points, max_t)
+            #vertical_extension = verticalExtension(max_height, surface_points, max_t)
             timed_output = outputAtCertainTimes(t, volume)    
             
         #plotting spheres in 3d            
@@ -539,9 +546,9 @@ for omega in omega_values:
     file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
     file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
     file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/volume) + '\n')
-    file.write('\n' + 'Vertical Extension 90%:' + str(vertical_extension) + '\n')
+    #file.write('\n' + 'Vertical Extension 90%:' + str(vertical_extension) + '\n')
     for key in sorted(timed_output):
-        file.write(str(key) + ',' + str(timed_output[key]) + '\n')
+        file.write('\n' + str(key) + ',' + str(timed_output[key]) + '\n')
 
 file.close()
     
