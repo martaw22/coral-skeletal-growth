@@ -239,12 +239,6 @@ def growEachNucleus(nucleus_array):
     NEW_R = (NEW_VOL*3/4*2/np.pi)**(1/3)  
     #new radius based on growth in this step is input back into the array
     nucleus_array[:,3] = NEW_R  
-    #Need to update the z of nuclei that are on top of other nuclei as the nuclei beneath them grow higher
-    numberrows = np.size(nucleus_array[:,0])    
-    for row in range(numberrows):
-        if nucleus_array[row,2] > 0:
-            newz = getZElevationUnderNucleus(nucleus_array[row,0], nucleus_array[row,1])
-            nucleus_array[row,2] = newz
     return sum(VOL)
 
 #use distance formula to get lenths of all four sides of each box               
@@ -444,7 +438,7 @@ Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
 DELTA_T = 10 #time step in seconds
 
-maximum_t = [3000]
+maximum_t = [1000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -457,7 +451,7 @@ SEED_RADIUS = 0.5  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [90]
+omega_values = [60]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
