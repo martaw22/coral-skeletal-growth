@@ -349,7 +349,7 @@ def nucleiGroundDensity(nuclei):
     nuclei_density = nuclei_ground_count/(X_LENGTH*Y_LENGTH)
     return nuclei_ground_count, nuclei_density
 
-def verticalExtension(max_height, surface_points, max_t):
+def verticalExtension(max_height, surface_points, t):
     '''Counts the zs at every iteration that are above or equal to a certain arbitrary height that is chosen for each omega - if
     90% of the zs are higher than or equal to that height, it divides by amount of time it took to get that high, resultin gin vertical 
     extension'''  
@@ -358,7 +358,7 @@ def verticalExtension(max_height, surface_points, max_t):
         if z >= max_height:
             z_count += 1
         if z_count >= 0.9 * len(surface_points[:,2]):
-            vertical_extension = max_height/max_t
+            vertical_extension = max_height/t
         else:
             vertical_extension = 0
     return vertical_extension
@@ -366,7 +366,7 @@ def verticalExtension(max_height, surface_points, max_t):
 dict_times_output = {}
 def outputAtCertainTimes(t, volume):
     '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count, vertical extension rate'''  
-    vertical_extension = verticalExtension(max_height, surface_points, max_t)
+    vertical_extension = verticalExtension(max_height, surface_points, t)
     dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), nucleiGroundDensity(nuclei)[0], vertical_extension
     return dict_times_output
 
@@ -436,13 +436,13 @@ start = timer()
 X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 10 #time step in seconds
+DELTA_T = 170 #time step in seconds
 
-maximum_t = [1000]
+maximum_t = [150000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
-max_height = 35
+max_height = 15
 
 #All nuclei start at a specified size = seed size 
 SEED_RADIUS = 0.5  #µm radius
@@ -451,7 +451,7 @@ SEED_RADIUS = 0.5  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [60]
+omega_values = [10]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
