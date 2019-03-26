@@ -396,7 +396,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_3/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_',  'png')
+    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -420,7 +420,7 @@ def plotSurfaceGrid(nuclei, omega, max_t):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_3/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_',  'png')
+    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -436,9 +436,9 @@ start = timer()
 X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 170 #time step in seconds
+DELTA_T = 20 #time step in seconds
 
-maximum_t = [150000]
+maximum_t = [25000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -451,7 +451,7 @@ SEED_RADIUS = 0.5  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [10]
+omega_values = [25]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -536,7 +536,7 @@ for omega in omega_values:
     
     
     #save the following information in a file: nuclei, time of deposition, omega, and time step
-    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_3/'+str(omega)+'_'+str(max_t)+'_', 'txt')
+    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_VE/'+str(omega)+'_'+str(max_t)+'_', 'txt')
     
     file = open(filename, 'a')
     file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
