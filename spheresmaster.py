@@ -121,7 +121,7 @@ def distanceFormula(x,y,z,x0,y0,z0):
 def Discrete3dSurface(gridsize):
     '''querying every integer point in the x,y,z box to determine where the surface is
     - put in the size of the walls of each grid in the surface as the input'''
-    numPointsTested = 0
+    numPointsTested = 0    
     surface_points = np.zeros(((X_LENGTH/gridsize + 1) * (Y_LENGTH/gridsize + 1), 3))
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
@@ -129,7 +129,7 @@ def Discrete3dSurface(gridsize):
             surface_points[numPointsTested][0] = xx
             surface_points[numPointsTested][1] = yy
             surface_points[numPointsTested][2] = zz
-            numPointsTested = numPointsTested + 1
+            numPointsTested = numPointsTested + 1    
     return surface_points
 
 #making a function to make arrays of the walls of the grid that will grow with the nuclei that touch the edge of the grid
@@ -365,9 +365,13 @@ def verticalExtension(max_height, surface_points, t):
 
 dict_times_output = {}
 def outputAtCertainTimes(t, volume):
-    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count, vertical extension rate'''  
+    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count, vertical extension rate, average height across the surface, std deviation of heights'''  
     vertical_extension = verticalExtension(max_height, surface_points, t)
-    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), nucleiGroundDensity(nuclei)[0], vertical_extension
+    z_sum = sum(surface_points[:,2])
+    number_z = len(surface_points[:,2])
+    ave_z = z_sum/number_z
+    std_dev_z = np.std(surface_points[:,2])
+    dict_times_output[t] = np.size(nuclei[:,0]), percentcoverage_firstlayer, volume, np.size(nuclei[:,0])/volume, volume/(X_LENGTH*Y_LENGTH*t), nucleiGroundDensity(nuclei)[0], vertical_extension, ave_z, std_dev_z
     return dict_times_output
 
 
@@ -436,9 +440,9 @@ start = timer()
 X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 20 #time step in seconds
+DELTA_T = 10 #time step in seconds
 
-maximum_t = [25000]
+maximum_t = [1000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -451,7 +455,7 @@ SEED_RADIUS = 0.5  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [25]
+omega_values = [90]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
