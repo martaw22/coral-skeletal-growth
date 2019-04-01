@@ -446,7 +446,7 @@ Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
 DELTA_T = 10 #time step in seconds
 
-maximum_t = [3000]
+maximum_t = [100]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
