@@ -400,7 +400,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_'+ str(SEED_RADIUS) + 'r_.125alpha_newJ',  'png')
+    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -424,7 +424,7 @@ def plotSurfaceGrid(nuclei, omega, max_t):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_' + str(SEED_RADIUS) + 'r_.125alpha_newJ',  'png')
+    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_unitsfixed/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -440,9 +440,9 @@ start = timer()
 X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 10 #time step in seconds
+DELTA_T = 60 #time step in seconds
 
-maximum_t = [40000]
+maximum_t = [100000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -463,7 +463,8 @@ MOLARV_ARAG = 100.09/2.93*1E12
 #Nucleation rate is also constant at constant Omega. 
 #J = Aexp(-balpha^3 / (ln(omega))^2) in nuclei  µm-2 sec-1
 A = 1858506.76
-BALPHA3 = -19.44553408 * 0.125
+BALPHA3 = -19.44553408
+alphamultiplier = 1
 
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
 #The GRIDSIZE_MULTIPLIER is a ratio that makes up for the sides not being 1
@@ -474,7 +475,7 @@ GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 ###############################################################################################
 ################## Simulation
 for omega in omega_values:    
-    Growth_Rate = ((omega-1)**1.7)*(11*10E-9) #mol m-2 sec-1
+    Growth_Rate = ((omega-1)**1.7)*(11*1E-9) #mol m-2 sec-1
     Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
     #nuclei/m2/s converted to nuclei/um2/s
     J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000 
@@ -540,7 +541,7 @@ for omega in omega_values:
     
     
     #save the following information in a file: nuclei, time of deposition, omega, and time step
-    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_VE/'+str(omega)+'_'+str(max_t)+'_'+ str(SEED_RADIUS) + 'r_.125alpha_newJ', 'txt')
+    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_unitsfixed/'+str(omega)+'_'+str(max_t)+'_'+ str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed', 'txt')
     
     file = open(filename, 'a')
     file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
