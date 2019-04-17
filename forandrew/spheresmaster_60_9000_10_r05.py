@@ -21,6 +21,10 @@ you tell it to stop because the floor is covered to a certain extent
 4. Think about shape of nuclei
 5. Check and make sure that you can't ever make a negative deposition'''
 
+
+cwd = os.getcwd()
+
+
 #Function for determining if a given point intersects with any nucleus in nuclei    
 def doesPointIntersectAnyNucleus(x,y,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r):
     '''does a given x,y point intersect a nucleus?
@@ -118,10 +122,13 @@ def distanceFormula(x,y,z,x0,y0,z0):
 
 
 ##Making a surface with discrete points in x,y,z space
-def Discrete3dSurface(gridsize):
+def Discrete3dSurface(gridsize, X_LENGTH, Y_LENGTH):
     '''querying every integer point in the x,y,z box to determine where the surface is
     - put in the size of the walls of each grid in the surface as the input'''
-    numPointsTested = 0    
+    X_LENGTH = int(X_LENGTH)
+    Y_LENGTH = int(Y_LENGTH)
+    gridsize = int(gridsize)
+    numPointsTested = 0
     surface_points = np.zeros(((X_LENGTH/gridsize + 1) * (Y_LENGTH/gridsize + 1), 3))
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
@@ -400,7 +407,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_'+ str(SEED_RADIUS) + 'r_.125alpha_newJ',  'png')
+    plt1_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' +  str(max_t) + '_' + str(SEED_RADIUS) + 'r',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -424,7 +431,7 @@ def plotSurfaceGrid(nuclei, omega, max_t):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_' + str(SEED_RADIUS) + 'r_.125alpha_newJ',  'png')
+    plt2_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' + str(max_t) + '_' + str(SEED_RADIUS) + 'r',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -442,20 +449,20 @@ Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
 DELTA_T = 10 #time step in seconds
 
-maximum_t = [40000]
+maximum_t = [9000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
-max_height = 15
+max_height = 30
 
 #All nuclei start at a specified size = seed size 
-SEED_RADIUS = 0.005  #µm radius
+SEED_RADIUS = 0.5  #µm radius
 
 #Growth only depends on radius and is independent of
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [15]
+omega_values = [60]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -463,7 +470,7 @@ MOLARV_ARAG = 100.09/2.93*1E12
 #Nucleation rate is also constant at constant Omega. 
 #J = Aexp(-balpha^3 / (ln(omega))^2) in nuclei  µm-2 sec-1
 A = 1858506.76
-BALPHA3 = -19.44553408 * 0.125
+BALPHA3 = -19.44553408
 
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
 #The GRIDSIZE_MULTIPLIER is a ratio that makes up for the sides not being 1
@@ -476,8 +483,8 @@ GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 for omega in omega_values:    
     Growth_Rate = ((omega-1)**1.7)*(11*10E-9) #mol m-2 sec-1
     Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
-    #nuclei/m2/s converted to nuclei/um2/s
-    J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000 
+    #nuclei/m2/s converted to nuclei/um2 for every 10 seconds
+    J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000*10 
     for max_t in maximum_t:
         #Start with one nuclei randomly distrubuted on the XY plane. 
         nuclei = np.array([[ random.random()*X_LENGTH,  random.random()*Y_LENGTH, 0, SEED_RADIUS]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
@@ -493,7 +500,7 @@ for omega in omega_values:
             #After each timestep grow each sphere according to the inorganic rate law. 
             growEachNucleus(nuclei)           
             #The surface is made up of boxes and the vertices of the boxes are saved in the array surface_points
-            surface_points = Discrete3dSurface(GRIDSIZEINPUT_FORSURFACE)            
+            surface_points = Discrete3dSurface(GRIDSIZEINPUT_FORSURFACE, X_LENGTH, Y_LENGTH)
             areas = areasofEachCellinGrid(surface_points)                        
             #now want to be able to pick a point within each small cell, once that cell is picked to nucleate within
             #also want to be able to take the sum of all areas, then pick a number randomly from 0 to the sum, then find out which cell that number is referring to
@@ -540,7 +547,7 @@ for omega in omega_values:
     
     
     #save the following information in a file: nuclei, time of deposition, omega, and time step
-    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_VE/'+str(omega)+'_'+str(max_t)+'_'+ str(SEED_RADIUS) + 'r_.125alpha_newJ', 'txt')
+    filename = uniqueFileName(str(cwd) + '/results/' + str(omega)+'_'+str(max_t)+'_' + str(SEED_RADIUS) + 'r', 'txt')
     
     file = open(filename, 'a')
     file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
