@@ -21,6 +21,10 @@ you tell it to stop because the floor is covered to a certain extent
 4. Think about shape of nuclei
 5. Check and make sure that you can't ever make a negative deposition'''
 
+
+cwd = os.getcwd()
+
+
 #Function for determining if a given point intersects with any nucleus in nuclei    
 def doesPointIntersectAnyNucleus(x,y,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r):
     '''does a given x,y point intersect a nucleus?
@@ -122,7 +126,7 @@ def Discrete3dSurface(gridsize):
     '''querying every integer point in the x,y,z box to determine where the surface is
     - put in the size of the walls of each grid in the surface as the input'''
     numPointsTested = 0    
-    surface_points = np.zeros(((X_LENGTH/gridsize + 1) * (Y_LENGTH/gridsize + 1), 3))
+    surface_points = np.zeros(((X_LENGTH//gridsize + 1) * (Y_LENGTH//gridsize + 1), 3))
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
             zz = getZElevation(xx,yy) 
@@ -180,13 +184,16 @@ def uniqueFileName(basename, ext):
 
 #after making a discrete grid of surface points, the next step is finding the area of boxes in that grid so that I can weight 
 #those areas for depositing nuclei
-def areaofIrregularQuad(point,l1,l2,l3,l4):
+def areaofIrregularQuad(point,l1,l2,l3,l4, X_LENGTH, GRIDSIZE_MULTIPLIER):
     '''area of a quadrilateral that is irregular, i.e. not a square/rectangle'''
     '''get all four lengths of the sides
     divide the quad into two triangles with a diagonal down the middle
     find the length of the diagonal using the distance formula between points 1 and 3 of the quad
     find areas of both triangles using heron's formula
     add the areas of the two triangles together'''
+    point = int(point)
+    X_LENGTH = int(X_LENGTH)
+    GRIDSIZE_MULTIPLIER = int(GRIDSIZE_MULTIPLIER)
     diagonal_len = distanceFormula(surface_points[point,0],surface_points[point,1],surface_points[point,2],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2])
     s1 = (l1+l2+diagonal_len)/2
     s2 = (l3+l4+diagonal_len)/2
@@ -195,7 +202,7 @@ def areaofIrregularQuad(point,l1,l2,l3,l4):
     area_total = area_tri_1 + area_tri_2
     return area_total
 
-def totalVolume(surface_points):
+def totalVolume(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER):
     '''find the total volume under the surface
     can do this by dividing each of the squares in the grid into two triangles
     if the points of each square are 1-4, with the top left being 1 and then proceeding clockwise,
@@ -210,6 +217,9 @@ def totalVolume(surface_points):
         grid_range = np.array(np.arange(ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones,X_LENGTH*GRIDSIZE_MULTIPLIER + ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones))
 
         for point in grid_range:
+            point = int(point)
+            GRIDSIZE_MULTIPLIER = int(GRIDSIZE_MULTIPLIER)
+            X_LENGTH = int(X_LENGTH)
             point1 = [surface_points[point,0],surface_points[point,1],surface_points[point,2]]
             point4 = [surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2]] 
             point3 = [surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2]]
@@ -247,21 +257,25 @@ def growEachNucleus(nucleus_array):
 #calculating the box areas moving from one side of the grid to the other, so calculating the area from 0 to 1 in x lengths, then from 1 to 2, and so on, so from 99 to 100 is the last one calculating and we don't want to calculate from 100 to anything, but simply move on to the next row
 #for this reason, we can just use arange ending in 100 because we don't want to actually use that number or the box that starts with that number
 #this loop provides the area of 10000 boxes in the grid with x lenght and y length equal to 100 in the array all_areas        
-def areasofEachCellinGrid(surface_points):
+def areasofEachCellinGrid(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER):
     '''Uses the distance formula between the vertices of each box of the grid and calculates the 
     area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
-    all_areas = np.zeros(X_LENGTH/GRIDSIZEINPUT_FORSURFACE * Y_LENGTH/GRIDSIZEINPUT_FORSURFACE)
+    all_areas = np.zeros(X_LENGTH//GRIDSIZEINPUT_FORSURFACE * Y_LENGTH//GRIDSIZEINPUT_FORSURFACE)
     area_count = 0
     for ones in np.arange(0,Y_LENGTH*GRIDSIZE_MULTIPLIER):
         
         grid_range = np.array(np.arange(ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones,X_LENGTH*GRIDSIZE_MULTIPLIER + ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones))
 
-        for point in grid_range:
+        for point1 in grid_range:
+            point = int(point1)
+            GRIDSIZE_MULTIPLIER = int(GRIDSIZE_MULTIPLIER)
+            X_LENGTH = int(X_LENGTH)
+            
             l1 = distanceFormula(surface_points[point,0],surface_points[point,1],surface_points[point,2], surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2])
             l2 = distanceFormula(surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2])
             l3 = distanceFormula(surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2])
             l4 = distanceFormula(surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2], surface_points[point,0],surface_points[point,1],surface_points[point,2])                              
-            area_cell = areaofIrregularQuad(point,l1,l2,l3,l4)
+            area_cell = areaofIrregularQuad(point,l1,l2,l3,l4,X_LENGTH,GRIDSIZE_MULTIPLIER)
             
             all_areas[area_count] = area_cell
             area_count += 1
@@ -400,7 +414,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
+    plt1_name = uniqueFileName(str(cwd) + '/results/unitsfixed/om' + str(omega) + '_' +  str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -424,7 +438,7 @@ def plotSurfaceGrid(nuclei, omega, max_t):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_unitsfixed/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
+    plt2_name = uniqueFileName(str(cwd) + '/results/unitsfixed/om' + str(omega) + '_' + str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -437,12 +451,12 @@ start = timer()
 #####################################################################################
 ########################USER DEFINED STUFF
 #Define the dimensions of a control volume in microns:
-X_LENGTH = 100 #µm
-Y_LENGTH = 100 #µm
+X_LENGTH = int(100) #µm
+Y_LENGTH = int(100) #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 60 #time step in seconds
+DELTA_T = 350 #time step in seconds
 
-maximum_t = [100000]
+maximum_t = [500000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -455,7 +469,7 @@ SEED_RADIUS = 0.005  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [15]
+omega_values = [20]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -463,13 +477,13 @@ MOLARV_ARAG = 100.09/2.93*1E12
 #Nucleation rate is also constant at constant Omega. 
 #J = Aexp(-balpha^3 / (ln(omega))^2) in nuclei  µm-2 sec-1
 A = 1858506.76
-BALPHA3 = -19.44553408
 alphamultiplier = 1
+BALPHA3 = -19.44553408 * alphamultiplier
 
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
 #The GRIDSIZE_MULTIPLIER is a ratio that makes up for the sides not being 1
 #Right now - have to pick a multiple of 0.5 for the code to work
-GRIDSIZEINPUT_FORSURFACE = 1
+GRIDSIZEINPUT_FORSURFACE = int(1)
 GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 
 ###############################################################################################
@@ -477,8 +491,8 @@ GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 for omega in omega_values:    
     Growth_Rate = ((omega-1)**1.7)*(11*1E-9) #mol m-2 sec-1
     Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
-    #nuclei/m2/s converted to nuclei/um2/s
-    J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000 
+    #nuclei/m2/s converted to nuclei/um2 for every 10 seconds
+    J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000
     for max_t in maximum_t:
         #Start with one nuclei randomly distrubuted on the XY plane. 
         nuclei = np.array([[ random.random()*X_LENGTH,  random.random()*Y_LENGTH, 0, SEED_RADIUS]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
@@ -495,7 +509,7 @@ for omega in omega_values:
             growEachNucleus(nuclei)           
             #The surface is made up of boxes and the vertices of the boxes are saved in the array surface_points
             surface_points = Discrete3dSurface(GRIDSIZEINPUT_FORSURFACE)            
-            areas = areasofEachCellinGrid(surface_points)                        
+            areas = areasofEachCellinGrid(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER)                        
             #now want to be able to pick a point within each small cell, once that cell is picked to nucleate within
             #also want to be able to take the sum of all areas, then pick a number randomly from 0 to the sum, then find out which cell that number is referring to
             sum_areas = sum(areas)
@@ -526,7 +540,7 @@ for omega in omega_values:
             percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(nuclei[:,0],nuclei[:,1],nuclei[:,3])*100
             #Record when ground is covered to certain percentages
             time_groundcoverage = findTimetoCoverGround(percentcoverage_firstlayer)
-            volume = totalVolume(surface_points)
+            volume = totalVolume(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER)
             timed_output = outputAtCertainTimes(t, volume)    
             
         #plotting spheres in 3d            
@@ -541,7 +555,7 @@ for omega in omega_values:
     
     
     #save the following information in a file: nuclei, time of deposition, omega, and time step
-    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_unitsfixed/'+str(omega)+'_'+str(max_t)+'_'+ str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed', 'txt')
+    filename = uniqueFileName(str(cwd) + '/results/unitsfixed/' + str(omega)+'_'+str(max_t)+'_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed', 'txt')
     
     file = open(filename, 'a')
     file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
