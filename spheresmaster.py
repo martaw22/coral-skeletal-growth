@@ -576,5 +576,6 @@ def runSimulation(DELTA_T, maximum_t, omega_values):
     print('time elapsed:',end - start)
 
 print('running simulation')
-runSimulation(10, [100], [30])
+for max_t_val in [20, 100]:
+    runSimulation(10, [max_t_val], [30])
 print('finished running simulation')
