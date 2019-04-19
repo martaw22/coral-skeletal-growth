@@ -22,6 +22,9 @@ you tell it to stop because the floor is covered to a certain extent
 4. Think about shape of nuclei
 5. Check and make sure that you can't ever make a negative deposition'''
 
+
+cwd = os.getcwd()
+
 #Function for determining if a given point intersects with any nucleus in nuclei    
 def doesPointIntersectAnyNucleus(x,y,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r):
     '''does a given x,y point intersect a nucleus?
@@ -181,13 +184,16 @@ def uniqueFileName(basename, ext):
 
 #after making a discrete grid of surface points, the next step is finding the area of boxes in that grid so that I can weight 
 #those areas for depositing nuclei
-def areaofIrregularQuad(point,l1,l2,l3,l4, surface_points):
+def areaofIrregularQuad(point,l1,l2,l3,l4, surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER):
     '''area of a quadrilateral that is irregular, i.e. not a square/rectangle'''
     '''get all four lengths of the sides
     divide the quad into two triangles with a diagonal down the middle
     find the length of the diagonal using the distance formula between points 1 and 3 of the quad
     find areas of both triangles using heron's formula
     add the areas of the two triangles together'''
+    point = int(point)
+    X_LENGTH = int(X_LENGTH)
+    GRIDSIZE_MULTIPLIER = int(GRIDSIZE_MULTIPLIER)
     diagonal_len = distanceFormula(surface_points[point,0],surface_points[point,1],surface_points[point,2],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2])
     s1 = (l1+l2+diagonal_len)/2
     s2 = (l3+l4+diagonal_len)/2
@@ -196,7 +202,7 @@ def areaofIrregularQuad(point,l1,l2,l3,l4, surface_points):
     area_total = area_tri_1 + area_tri_2
     return area_total
 
-def totalVolume(surface_points):
+def totalVolume(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER):
     '''find the total volume under the surface
     can do this by dividing each of the squares in the grid into two triangles
     if the points of each square are 1-4, with the top left being 1 and then proceeding clockwise,
@@ -211,6 +217,9 @@ def totalVolume(surface_points):
         grid_range = np.array(np.arange(ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones,X_LENGTH*GRIDSIZE_MULTIPLIER + ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones))
 
         for point in grid_range:
+            point = int(point)
+            GRIDSIZE_MULTIPLIER = int(GRIDSIZE_MULTIPLIER)
+            X_LENGTH = int(X_LENGTH)
             point1 = [surface_points[point,0],surface_points[point,1],surface_points[point,2]]
             point4 = [surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2]] 
             point3 = [surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2]]
@@ -248,7 +257,7 @@ def growEachNucleus(nucleus_array, Growth_Rate, DELTA_T):
 #calculating the box areas moving from one side of the grid to the other, so calculating the area from 0 to 1 in x lengths, then from 1 to 2, and so on, so from 99 to 100 is the last one calculating and we don't want to calculate from 100 to anything, but simply move on to the next row
 #for this reason, we can just use arange ending in 100 because we don't want to actually use that number or the box that starts with that number
 #this loop provides the area of 10000 boxes in the grid with x lenght and y length equal to 100 in the array all_areas        
-def areasofEachCellinGrid(surface_points):
+def areasofEachCellinGrid(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER):
     '''Uses the distance formula between the vertices of each box of the grid and calculates the 
     area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
     all_areas = np.zeros(X_LENGTH/GRIDSIZEINPUT_FORSURFACE * Y_LENGTH/GRIDSIZEINPUT_FORSURFACE)
@@ -258,11 +267,14 @@ def areasofEachCellinGrid(surface_points):
         grid_range = np.array(np.arange(ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones,X_LENGTH*GRIDSIZE_MULTIPLIER + ones*X_LENGTH*GRIDSIZE_MULTIPLIER+ones))
 
         for point in grid_range:
+            point = int(point)
+            GRIDSIZE_MULTIPLIER = int(GRIDSIZE_MULTIPLIER)
+            X_LENGTH = int(X_LENGTH)
             l1 = distanceFormula(surface_points[point,0],surface_points[point,1],surface_points[point,2], surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2])
             l2 = distanceFormula(surface_points[point+1,0], surface_points[point+1,1], surface_points[point+1,2], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2])
             l3 = distanceFormula(surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),0],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),1],surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+2),2], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2])
             l4 = distanceFormula(surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),0], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),1], surface_points[point+(GRIDSIZE_MULTIPLIER*X_LENGTH+1),2], surface_points[point,0],surface_points[point,1],surface_points[point,2])                              
-            area_cell = areaofIrregularQuad(point,l1,l2,l3,l4,surface_points)
+            area_cell = areaofIrregularQuad(point,l1,l2,l3,l4,surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER)
             
             all_areas[area_count] = area_cell
             area_count += 1
@@ -393,7 +405,7 @@ def plot3DSpheres(nuclei, omega, DELTA_T, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_VE/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
+    plt1_name = uniqueFileName(str(cwd) + '/results/unitsfixed/om' + str(omega) + '_' +  str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -417,7 +429,7 @@ def plotSurfaceGrid(nuclei, omega, DELTA_T, max_t, surface_points):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_unitsfixed/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
+    plt2_name = uniqueFileName(str(cwd) + '/results/unitsfixed/om' + str(omega) + '_' + str(max_t) + '_' + str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -529,7 +541,7 @@ def runSimulation(DELTA_T, maximum_t, omega_values):
                 percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(nuclei[:,0],nuclei[:,1],nuclei[:,3])*100
                 #Record when ground is covered to certain percentages
                 findTimetoCoverGround(percentcoverage_firstlayer, t, time_groundcover)
-                volume = totalVolume(surface_points)
+                volume = totalVolume(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER)
                 outputAtCertainTimes(t, volume, surface_points, nuclei, percentcoverage_firstlayer, dict_times_output)    
                 
             #plotting spheres in 3d            
