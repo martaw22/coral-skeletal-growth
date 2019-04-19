@@ -382,7 +382,7 @@ def outputAtCertainTimes(t, volume, surface_points, nuclei, percentcoverage_firs
 
             
 
-def plot3DSpheres(nuclei, omega, DELTA_T, max_t):
+def plot3DSpheres(nuclei, omega, DELTA_T, max_t, alphamultiplier, SEED_RADIUS):
     '''plotting hemispheres for each nucleus'''            
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -409,7 +409,7 @@ def plot3DSpheres(nuclei, omega, DELTA_T, max_t):
     fig.savefig(plt1_name)
     plt.close()
 
-def plotSurfaceGrid(nuclei, omega, DELTA_T, max_t, surface_points):  
+def plotSurfaceGrid(nuclei, omega, DELTA_T, max_t, surface_points, alphamultiplier, SEED_RADIUS):  
     '''plot the 3D grid surface of the nuclei and the walls'''  
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -449,7 +449,7 @@ Z_LENGTH = 100 #µm
 max_height = 15
 
 #All nuclei start at a specified size = seed size 
-SEED_RADIUS = 0.005  #µm radius
+  #µm radius
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -457,8 +457,8 @@ MOLARV_ARAG = 100.09/2.93*1E12
 #Nucleation rate is also constant at constant Omega. 
 #J = Aexp(-balpha^3 / (ln(omega))^2) in nuclei  µm-2 sec-1
 A = 1858506.76
-BALPHA3 = -19.44553408
-alphamultiplier = 1
+
+
 
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
 #The GRIDSIZE_MULTIPLIER is a ratio that makes up for the sides not being 1
@@ -475,11 +475,13 @@ GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 #  n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #  It is not clear that this bulk growth rate scales down to this scale
 
-def runSimulation(DELTA_T, maximum_t, omega_values):
+def runSimulation(DELTA_T, max_t, omega, alphamultiplier, SEED_RADIUS):
     print('beginning simulation with params: ')
     print('  DELTA_T: ' + str(DELTA_T))
-    print('  maximum_t:  ' + str(maximum_t[0]))
-    print('  omega_values: ' + str(omega_values[0]))
+    print('  maximum_t:  ' + str(max_t))
+    print('  omega_values: ' + str(omega))
+    print('  alphamultiplier:  ' + str(alphamultiplier))
+    print('  SEED_RADIUS:  ' + str(SEED_RADIUS))
     sys.stdout.flush()
 
     #python version of timing
@@ -487,99 +489,100 @@ def runSimulation(DELTA_T, maximum_t, omega_values):
     start = timer()
     dict_times_output = {}
     time_groundcover = {}
-    for omega in omega_values:    
-        Growth_Rate = ((omega-1)**1.7)*(11*1E-9) #mol m-2 sec-1
-        Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
-        #nuclei/m2/s converted to nuclei/um2/s
-        J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000 
-        for max_t in maximum_t:
-            #Start with one nuclei randomly distrubuted on the XY plane. 
-            nuclei = np.array([[ random.random()*X_LENGTH,  random.random()*Y_LENGTH, 0, SEED_RADIUS]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
-            ##                       [x                                  y            z     radius]
-            #recording the time step of each nuclei that is formed and the time that each percentage of the 2d yx grid is covered
-            nuclei_timeofdeposition = [0]
-            ttime = np.arange(0,max_t,DELTA_T)        
-            for t in ttime:
-                print('starting iteration with time: ' + str(t))
-                sys.stdout.flush()
-
-                ## Grow Spheres
-                #Each sphere is described by a radius and an origin. 
-                #This information saved in an array nuclei that grows in length with more nuclei.            
-                #After each timestep grow each sphere according to the inorganic rate law. 
-                growEachNucleus(nuclei, Growth_Rate, DELTA_T)           
-                #The surface is made up of boxes and the vertices of the boxes are saved in the array surface_points
-                surface_points = Discrete3dSurface(GRIDSIZEINPUT_FORSURFACE,nuclei)            
-                areas = areasofEachCellinGrid(surface_points)                        
-                #now want to be able to pick a point within each small cell, once that cell is picked to nucleate within
-                #also want to be able to take the sum of all areas, then pick a number randomly from 0 to the sum, then find out which cell that number is referring to
-                sum_areas = sum(areas)
-                #pick an number randomly from 0 through sum_areas
-                random_location = random.random()*sum_areas           
-                ## Nucleation        
-                #Based on probability of a nucleus being deposited (based on omega and area)
-                #Need to select from the right probability distribution -> think about
-                #this! For now, assume in steady-state regime so a uniform distribution
-                #seems reasonable
-                new_nuclei = None
-                Nuclei_flag = 0       
-                prob_nuc = X_LENGTH*Y_LENGTH*J_rate*DELTA_T
-                if prob_nuc > 1:
-                    print('ERROR: reduce time step size - nucleation too fast')            
-                randomnumber = random.random() 
-                new_coordinates = findNewXYZ(areas, random_location,nuclei)
-                if randomnumber<=prob_nuc:
-                    #generate a new nuclei on x,y,z surface
-                    new_nuclei = np.array([[ new_coordinates[0],  new_coordinates[1], new_coordinates[2], SEED_RADIUS]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
-                    Nuclei_flag = 1              
-                if Nuclei_flag == 1:  #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add                       
-                    #adding the nuclei continuously so that they can be added on top of each other        
-                    nuclei = np.append(nuclei, [new_nuclei[0,:]], axis=0)
-                    print(nuclei)
-                    nuclei_timeofdeposition = np.append(nuclei_timeofdeposition,t)              
-                
-                percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(nuclei[:,0],nuclei[:,1],nuclei[:,3])*100
-                #Record when ground is covered to certain percentages
-                findTimetoCoverGround(percentcoverage_firstlayer, t, time_groundcover)
-                volume = totalVolume(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER)
-                outputAtCertainTimes(t, volume, surface_points, nuclei, percentcoverage_firstlayer, dict_times_output)    
-                
-            #plotting spheres in 3d            
-            plot3DSpheres(nuclei, omega, DELTA_T, max_t)
-            #plotting the surface of the nuclei     
-            plotSurfaceGrid(nuclei, omega, DELTA_T, max_t, surface_points)
-
-        #Output parameters
-        print('Number of nuclei:', np.size(nuclei[:,0]))
-
-        #save the following information in a file: nuclei, time of deposition, omega, and time step
-        filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_unitsfixed/'+str(omega)+'_'+str(max_t)+'_'+ str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed', 'txt')
-        
-        file = open(filename, 'a')
-        file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
-        time_between_dep = []
-        for nucleus in range(len(nuclei)):
-            file.write(str(nuclei[nucleus]) + ', ')
-            time_dep = nuclei_timeofdeposition[nucleus]
-            file.write(str(time_dep) + ', ')
-            file.write(str(DELTA_T) + '\n')
-            if nucleus is not 0:
-                time_between_dep = np.append(time_between_dep, time_dep - nuclei_timeofdeposition[nucleus-1])
-        file.write('\n' + 'Omega:' + str(omega) + '\n')
-        #file.write('\n' + '.5J' + '\n' )
-        file.write('\n' + 'Total Number Nuclei:' +str(np.size(nuclei[:,0])) + '\n')    
-        file.write('\n' + 'Total Calculated Volume:' +str(volume) + ' um3' + '\n')
-        file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(nuclei, Growth_Rate, DELTA_T)) + ' um3' + '\n')
-        for val in [ 10, 25, 50, 75, 'final']:
-            file.write('\n' + 'Time to Cover Ground ' + str(val) + '%:' + str(time_groundcover[val]) + 's' + '\n')
-        file.write('\n' + 'Total Time:' + str(max_t) + ' s' + '\n')
-        file.write('\n' + 'Average Time Step Between Depositions:' + str(np.average(time_between_dep)) + 's' + '\n')
-        file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
-        file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
-        file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/volume) + '\n')
-        for key in sorted(dict_times_output):
-            file.write('\n' + str(key) + ',' + str(dict_times_output[key]) + '\n')
+   
+    Growth_Rate = ((omega-1)**1.7)*(11*1E-9) #mol m-2 sec-1
+    Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
+    #nuclei/m2/s converted to nuclei/um2/s
+    BALPHA3 = -19.44553408 * alphamultiplier
+    J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000 
     
+    #Start with one nuclei randomly distrubuted on the XY plane. 
+    nuclei = np.array([[ random.random()*X_LENGTH,  random.random()*Y_LENGTH, 0, SEED_RADIUS]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
+    ##                       [x                                  y            z     radius]
+    #recording the time step of each nuclei that is formed and the time that each percentage of the 2d yx grid is covered
+    nuclei_timeofdeposition = [0]
+    ttime = np.arange(0,max_t,DELTA_T)        
+    for t in ttime:
+        print('starting iteration with time: ' + str(t))
+        sys.stdout.flush()
+
+        ## Grow Spheres
+        #Each sphere is described by a radius and an origin. 
+        #This information saved in an array nuclei that grows in length with more nuclei.            
+        #After each timestep grow each sphere according to the inorganic rate law. 
+        growEachNucleus(nuclei, Growth_Rate, DELTA_T)           
+        #The surface is made up of boxes and the vertices of the boxes are saved in the array surface_points
+        surface_points = Discrete3dSurface(GRIDSIZEINPUT_FORSURFACE,nuclei)            
+        areas = areasofEachCellinGrid(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER)                        
+        #now want to be able to pick a point within each small cell, once that cell is picked to nucleate within
+        #also want to be able to take the sum of all areas, then pick a number randomly from 0 to the sum, then find out which cell that number is referring to
+        sum_areas = sum(areas)
+        #pick an number randomly from 0 through sum_areas
+        random_location = random.random()*sum_areas           
+        ## Nucleation        
+        #Based on probability of a nucleus being deposited (based on omega and area)
+        #Need to select from the right probability distribution -> think about
+        #this! For now, assume in steady-state regime so a uniform distribution
+        #seems reasonable
+        new_nuclei = None
+        Nuclei_flag = 0       
+        prob_nuc = X_LENGTH*Y_LENGTH*J_rate*DELTA_T
+        if prob_nuc > 1:
+            print('ERROR: reduce time step size - nucleation too fast')            
+        randomnumber = random.random() 
+        new_coordinates = findNewXYZ(areas, random_location,nuclei)
+        if randomnumber<=prob_nuc:
+            #generate a new nuclei on x,y,z surface
+            new_nuclei = np.array([[ new_coordinates[0],  new_coordinates[1], new_coordinates[2], SEED_RADIUS]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
+            Nuclei_flag = 1              
+        if Nuclei_flag == 1:  #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add                       
+            #adding the nuclei continuously so that they can be added on top of each other        
+            nuclei = np.append(nuclei, [new_nuclei[0,:]], axis=0)
+            print(nuclei)
+            nuclei_timeofdeposition = np.append(nuclei_timeofdeposition,t)              
+        
+        percentcoverage_firstlayer = getSampledPercentageAreaOccupiedByNuclei(nuclei[:,0],nuclei[:,1],nuclei[:,3])*100
+        #Record when ground is covered to certain percentages
+        findTimetoCoverGround(percentcoverage_firstlayer, t, time_groundcover)
+        volume = totalVolume(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER)
+        outputAtCertainTimes(t, volume, surface_points, nuclei, percentcoverage_firstlayer, dict_times_output)    
+        
+        #plotting spheres in 3d            
+        plot3DSpheres(nuclei, omega, DELTA_T, max_t, alphamultiplier, SEED_RADIUS)
+        #plotting the surface of the nuclei     
+        plotSurfaceGrid(nuclei, omega, DELTA_T, max_t, surface_points, alphamultiplier, SEED_RADIUS)
+
+    #Output parameters
+    print('Number of nuclei:', np.size(nuclei[:,0]))
+
+    #save the following information in a file: nuclei, time of deposition, omega, and time step
+    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_files_unitsfixed/'+str(omega)+'_'+str(max_t)+'_'+ str(DELTA_T) + 'delT_' + str(alphamultiplier) + 'alpha_' + str(SEED_RADIUS) + 'r_unitsfixed', 'txt')
+    
+    file = open(filename, 'a')
+    file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
+    time_between_dep = []
+    for nucleus in range(len(nuclei)):
+        file.write(str(nuclei[nucleus]) + ', ')
+        time_dep = nuclei_timeofdeposition[nucleus]
+        file.write(str(time_dep) + ', ')
+        file.write(str(DELTA_T) + '\n')
+        if nucleus is not 0:
+            time_between_dep = np.append(time_between_dep, time_dep - nuclei_timeofdeposition[nucleus-1])
+    file.write('\n' + 'Omega:' + str(omega) + '\n')
+    #file.write('\n' + '.5J' + '\n' )
+    file.write('\n' + 'Total Number Nuclei:' +str(np.size(nuclei[:,0])) + '\n')    
+    file.write('\n' + 'Total Calculated Volume:' +str(volume) + ' um3' + '\n')
+    file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(nuclei, Growth_Rate, DELTA_T)) + ' um3' + '\n')
+    for val in [ 10, 25, 50, 75, 'final']:
+        file.write('\n' + 'Time to Cover Ground ' + str(val) + '%:' + str(time_groundcover[val]) + 's' + '\n')
+    file.write('\n' + 'Total Time:' + str(max_t) + ' s' + '\n')
+    file.write('\n' + 'Average Time Step Between Depositions:' + str(np.average(time_between_dep)) + 's' + '\n')
+    file.write('\n' + 'Number Nuclei on Ground Level:' + str(nucleiGroundDensity(nuclei)[0]) + '\n')
+    file.write('\n' + 'Nuclei Ground Density:' + str(nucleiGroundDensity(nuclei)[1]) + ' nuclei/um2' + '\n')
+    file.write('\n' + 'Ratio of Nuclei to Growth:' + str(np.size(nuclei[:,0])/volume) + '\n')
+    for key in sorted(dict_times_output):
+        file.write('\n' + str(key) + ',' + str(dict_times_output[key]) + '\n')
+
     file.close()
     print('wrote results to file:\n  ' + filename)
 
@@ -589,5 +592,5 @@ def runSimulation(DELTA_T, maximum_t, omega_values):
 
 print('running simulation')
 for max_t_val in [20, 100]:
-    runSimulation(10, [max_t_val], [30])
+    runSimulation(10, max_t_val, 30, 1, 0.005)
 print('finished running simulation')
