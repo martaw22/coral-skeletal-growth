@@ -126,7 +126,7 @@ def Discrete3dSurface(gridsize,nuclei):
     '''querying every integer point in the x,y,z box to determine where the surface is
     - put in the size of the walls of each grid in the surface as the input'''
     numPointsTested = 0    
-    surface_points = np.zeros(((X_LENGTH/gridsize + 1) * (Y_LENGTH/gridsize + 1), 3))
+    surface_points = np.zeros(((X_LENGTH//gridsize + 1) * (Y_LENGTH//gridsize + 1), 3))
     for xx in np.arange(0,X_LENGTH+gridsize,gridsize):
         for yy in np.arange(0,Y_LENGTH+gridsize,gridsize):
             zz = getZElevation(xx,yy,nuclei) 
@@ -260,7 +260,7 @@ def growEachNucleus(nucleus_array, Growth_Rate, DELTA_T):
 def areasofEachCellinGrid(surface_points, X_LENGTH, GRIDSIZE_MULTIPLIER):
     '''Uses the distance formula between the vertices of each box of the grid and calculates the 
     area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
-    all_areas = np.zeros(X_LENGTH/GRIDSIZEINPUT_FORSURFACE * Y_LENGTH/GRIDSIZEINPUT_FORSURFACE)
+    all_areas = np.zeros(X_LENGTH//GRIDSIZEINPUT_FORSURFACE * Y_LENGTH//GRIDSIZEINPUT_FORSURFACE)
     area_count = 0
     for ones in np.arange(0,Y_LENGTH*GRIDSIZE_MULTIPLIER):
         
