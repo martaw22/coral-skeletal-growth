@@ -454,9 +454,9 @@ start = timer()
 X_LENGTH = int(100) #µm
 Y_LENGTH = int(100) #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 10 #time step in seconds
+DELTA_T = 2500 #time step in seconds
 
-maximum_t = [100]
+maximum_t = [995000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -469,7 +469,7 @@ SEED_RADIUS = 0.005  #µm radius
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
 #It is not clear that this bulk growth rate scales down to this scale
-omega_values = [30]
+omega_values = [20]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
 MOLARV_ARAG = 100.09/2.93*1E12
@@ -477,7 +477,7 @@ MOLARV_ARAG = 100.09/2.93*1E12
 #Nucleation rate is also constant at constant Omega. 
 #J = Aexp(-balpha^3 / (ln(omega))^2) in nuclei  µm-2 sec-1
 A = 1858506.76
-alphamultiplier = 1
+alphamultiplier = 1.953125
 BALPHA3 = -19.44553408 * alphamultiplier
 
 #The discrete surface grid is made up of boxes with sides of length GRIDSIZEINPUT_FORSURFACE
