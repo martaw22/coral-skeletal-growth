@@ -13,13 +13,10 @@ import os
 import itertools
 
 
-'''Next things:
-1. Call this code from a different code and run it so that the time is not the input - it just runs until 
-you tell it to stop because the floor is covered to a certain extent
+####Functions used in the code
+####The code inputs start at line 444
 
-3. Start working on the part of random distribution of nuclei/clustering
-4. Think about shape of nuclei
-5. Check and make sure that you can't ever make a negative deposition'''
+cwd = os.getcwd()
 
 #Function for determining if a given point intersects with any nucleus in nuclei    
 def doesPointIntersectAnyNucleus(x,y,z, nuclei_x, nuclei_y, nuclei_z, nuclei_r):
@@ -408,7 +405,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_oldgrowth/modelnucleisphere_om' + str(omega) + '_' +  str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel',  'png')
+    plt1_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' +  str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -432,7 +429,7 @@ def plotSurfaceGrid(nuclei, omega, max_t):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/plots_oldgrowth/modelnucleisurface_om' + str(omega) + '_' + str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel',  'png')
+    plt2_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' + str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -448,9 +445,9 @@ start = timer()
 X_LENGTH = 100 #µm
 Y_LENGTH = 100 #µm
 Z_LENGTH = 100 #µm
-DELTA_T = 2000 #time step in seconds
+DELTA_T = 100 #time step in seconds
 
-maximum_t = [1760000]
+maximum_t = [1000]
 
 #max_height is chosen for each omega to be the bar to reach for vertical extension - a height that is high enough to not be influence
 #by the first layer of nuclei on the ground
@@ -549,7 +546,7 @@ for omega in omega_values:
     
     
     #save the following information in a file: nuclei, time of deposition, omega, and time step
-    filename = uniqueFileName('/Users/Marta/Documents/Python/nucleation_model_output/text_oldgrowth/'+str(omega)+'_'+str(max_t)+ '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel', 'txt')
+    filename = uniqueFileName(str(cwd) + '/results/'+str(omega)+'_'+str(max_t)+ '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel', 'txt')
     
     file = open(filename, 'a')
     file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
