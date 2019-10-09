@@ -14,7 +14,7 @@ import itertools
 
 
 ####Functions used in the code
-####The code inputs start at line 444
+####The inputs start at line 439
 
 cwd = os.getcwd()
 
@@ -245,12 +245,7 @@ def growEachNucleus(nucleus_array):
             nucleus_array[row,2] = newz
     return sum(VOL)
 
-#use distance formula to get lenths of all four sides of each box               
-##at the end of each row, I don't want it to wrap around to the next row
-#think I solved that issue by calculating the area row by row - from 0 to 99 for each x row
-#calculating the box areas moving from one side of the grid to the other, so calculating the area from 0 to 1 in x lengths, then from 1 to 2, and so on, so from 99 to 100 is the last one calculating and we don't want to calculate from 100 to anything, but simply move on to the next row
-#for this reason, we can just use arange ending in 100 because we don't want to actually use that number or the box that starts with that number
-#this loop provides the area of 10000 boxes in the grid with x lenght and y length equal to 100 in the array all_areas        
+
 def areasofEachCellinGrid(surface_points):
     '''Uses the distance formula between the vertices of each box of the grid and calculates the 
     area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
@@ -459,7 +454,6 @@ SEED_RADIUS = 0.005  #µm radius
 #Growth only depends on radius and is independent of
 #origin. Use rate law Rate = k(Omega-1)^n where k = 11 nmol  m-2 s-1 and
 #n=1.7 (from Alex's summary figure that he sent me). If Omega is constant then this Growth_Rate is always the same
-#It is not clear that this bulk growth rate scales down to this scale
 omega_values = [10]
 
 #molar volume of aragonite in µm3/mol = MW (g/mol) / density (g/cm3) * 1E12
@@ -559,7 +553,6 @@ for omega in omega_values:
         if nucleus != 0:
             time_between_dep = np.append(time_between_dep, time_dep - nuclei_timeofdeposition[nucleus-1])
     file.write('\n' + 'Omega:' + str(omega) + '\n')
-    #file.write('\n' + '.5J' + '\n' )
     file.write('\n' + 'Total Number Nuclei:' +str(np.size(nuclei[:,0])) + '\n')    
     file.write('\n' + 'Total Calculated Volume:' +str(volume) + ' um3' + '\n')
     file.write('\n' + 'Actual Volume with Overlaps:' + str(growEachNucleus(nuclei)) + ' um3' + '\n')
