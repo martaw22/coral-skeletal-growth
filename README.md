@@ -7,7 +7,9 @@
 ## Running the code
 
 -Edit the constants in [spheresmaster.py](spheresmaster.py) (see below for documentation)
+
 -'python3 spheresmaster.py'
+
 -the script will generate three files in a 'results' folder in the your current working directly: a .csv file with the output results and two .png files plotting the results, all named with the constants that you choose
 
 ## How to use the constants
