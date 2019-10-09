@@ -400,7 +400,7 @@ def plot3DSpheres(nuclei, omega, max_t):
         z = r * np.outer(np.ones(np.size(u)), np.cos(v))
         ax.plot_surface(x, y, z, color='b', alpha=0.5, clip_on = True)    
 
-    plt1_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' +  str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel',  'png')
+    plt1_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' +  str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha',  'png')
     fig.savefig(plt1_name)
     plt.close()
 
@@ -424,7 +424,7 @@ def plotSurfaceGrid(nuclei, omega, max_t):
     ax.scatter(walls_front[:,0], walls_front[:,1], walls_front[:,2], c=Z_front, alpha=0.5, clip_on = True, s=20, lw=1)
     ax.scatter(surface_points[:,0], surface_points[:,1], surface_points[:,2], c=Z, alpha=0.5, clip_on = True, s=20, lw=1)  
          
-    plt2_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' + str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel',  'png')
+    plt2_name = uniqueFileName(str(cwd) + '/results/om' + str(omega) + '_' + str(max_t) + '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha',  'png')
     fig.savefig(plt2_name)                                                                      
     plt.close() 
 
@@ -476,7 +476,7 @@ GRIDSIZE_MULTIPLIER = 1/GRIDSIZEINPUT_FORSURFACE
 for omega in omega_values:    
     Growth_Rate = ((omega-1)**1.7)*(11*1E-9) #mol m-2 sec-1
     Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
-    #nuclei/m2/s converted to nuclei/um2 for every 10 seconds
+    #nuclei/m2/s converted to nuclei/um2
     J_rate = A * np.exp(BALPHA3/np.log(omega)**2)/1000/1000/1000/1000 
     for max_t in maximum_t:
         #Start with one nuclei randomly distrubuted on the XY plane. 
@@ -540,7 +540,7 @@ for omega in omega_values:
     
     
     #save the following information in a file: nuclei, time of deposition, omega, and time step
-    filename = uniqueFileName(str(cwd) + '/results/'+str(omega)+'_'+str(max_t)+ '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha_oldgrowthmodel', 'txt')
+    filename = uniqueFileName(str(cwd) + '/results/'+str(omega)+'_'+str(max_t)+ '_' + str(SEED_RADIUS) + 'r_' + str(alpha_multiplier) + 'alpha', 'txt')
     
     file = open(filename, 'a')
     file.write('\n' + 'Nucleus X, Nucleus Y, Nucleus Z, Nucleus R, Time of Deposition, Timestep' + '\n')
