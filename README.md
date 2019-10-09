@@ -24,6 +24,7 @@ Max Time - how long do you want the code to run
 Time step - how fast do you want to step through time? There is a probability a nucleus is deposited each time step, and that probability is determined by omega.  If this time step is too fast, then you will not deposit as many nuclei as you should because the chance a nucleus is deposited is at least 100%, but if it is too slow it will take longer to run
 
 Optional inputs:
+
 X_length, Y_length, and Z_length - the 3D space that you are growing the skeleton in
 
 max_height - if you want to know how long it takes to grow to a particular height
