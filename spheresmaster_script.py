@@ -12,17 +12,19 @@ import config
 
 start = timer()
 ###############################################################################################
-################## Simulation
+##Simulation
 
-Growth_Rate = ((config.OMEGA-1)**1.7)*(11*1E-9) #mol m-2 sec-1
-Growth_Rate = (Growth_Rate/1000/1000/1000/1000)      #change units to mol/um/s
+#The growth rate is dependent on OMEGA, in units of mol m-2 sec-1
+Growth_Rate = ((config.OMEGA-1)**1.7)*(11*1E-9)
+#change units to mol/um/s
+Growth_Rate = (Growth_Rate/1000/1000/1000/1000)
+#Nucleation rate is constant at constant OMEGA
 #nuclei/m2/s converted to nuclei/um2
-J_rate = config.A * np.exp(config.BALPHA3/np.log(config.OMEGA)**2)/1000/1000/1000/1000 
-
-#Start with one nuclei randomly distrubuted on the XY plane. 
-nuclei = np.array([[ random.random()*config.X_LENGTH,  random.random()*config.Y_LENGTH, 0, config.SEED_RADIUS]]); #made a 2D array because can't concatenate it correctly eitherwise - it will only append to the end of the same array, it will not add a new array to the array of arrays
-##                       [x                                  y            z     radius]
-#recording the time step of each nuclei that is formed and the time that each percentage of the 2d yx grid is covered
+J_rate = config.A * np.exp(config.BALPHA3/np.log(config.OMEGA)**2)/1000/1000/1000/1000
+#Start with one nuclei randomly distrubuted on the XY plane.
+##[x, y, z, radius]
+nuclei = np.array([[random.random()*config.X_LENGTH, random.random()*config.Y_LENGTH, 0, config.SEED_RADIUS]])
+#recording the time step of each nuclei that is formed and the time that each percentage of the 2d xy grid is covered
 nuclei_timeofdeposition = [0]
 ttime = np.arange(0,config.MAX_T,config.DELTA_T)        
 for t in ttime:
@@ -42,9 +44,6 @@ for t in ttime:
     random_location = random.random()*sum_areas           
     ## Nucleation        
     #Based on probability of a nucleus being deposited (based on OMEGA and area)
-    #Need to select from the right probability distribution -> think about
-    #this! For now, assume in steady-state regime so a uniform distribution
-    #seems reasonable
     new_nuclei = None
     Nuclei_flag = 0       
     prob_nuc = config.X_LENGTH*config.Y_LENGTH*J_rate*config.DELTA_T
@@ -54,9 +53,10 @@ for t in ttime:
     new_coordinates = sk.findNewXYZ(areas, random_location, nuclei)
     if randomnumber<=prob_nuc:
         #generate a new nuclei on x,y,z surface
-        new_nuclei = np.array([[ new_coordinates[0],  new_coordinates[1], new_coordinates[2], config.SEED_RADIUS]]);  #put an extra set of brackets around this to make it a 2D array (even though it only has 1 row and is a 1d array)
+        new_nuclei = np.array([[ new_coordinates[0],  new_coordinates[1], new_coordinates[2], config.SEED_RADIUS]])
         Nuclei_flag = 1              
-    if Nuclei_flag == 1:  #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add                       
+    #if flag = 0, don't add the nuclei, but if it's 1, then it's ok to add
+    if Nuclei_flag == 1:                         
         #adding the nuclei continuously so that they can be added on top of each other        
         nuclei = np.append(nuclei, [new_nuclei[0,:]], axis=0)
         print(nuclei)
@@ -72,8 +72,6 @@ for t in ttime:
 sk.plot3DSpheres(nuclei, config.OMEGA)
 #plotting the surface of the nuclei     
 sk.plotSurfaceGrid(nuclei, config.OMEGA, surface_points)
-
-    
 
 #Output parameters
 print('Number of nuclei:', np.size(nuclei[:,0]))
@@ -112,7 +110,6 @@ for key in sorted(timed_output):
 
 file.close()
     
-
 end = timer()
 #time in seconds
 print('time elapsed:',end - start)
