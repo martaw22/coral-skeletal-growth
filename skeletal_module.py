@@ -177,6 +177,8 @@ def wallsofGrid(gridsize, nuclei):
 #used this thread to figure out how to save each file with a new unique name: https://stackoverflow.com/questions/33691187/how-to-save-the-file-with-different-name-and-not-overwriting-existing-one        
 def uniqueFileName(basename, ext):
     '''Each time the code runs, the outputs are saved with a unique file name.
+
+    The inputs are the the string format of the cwd and the constants that were chosen, as well as the format type.
     '''
     actualname = "%s.%s" % (basename, ext)
     c = itertools.count()
@@ -187,12 +189,15 @@ def uniqueFileName(basename, ext):
 #after making a discrete grid of surface points, the next step is finding the area of boxes in that grid so that I can weight 
 #those areas for depositing nuclei
 def areaofIrregularQuad(point, l1, l2, l3, l4, surface_points):
-    '''area of a quadrilateral that is irregular, i.e. not a square/rectangle'''
-    '''get all four lengths of the sides
-    divide the quad into two triangles with a diagonal down the middle
-    find the length of the diagonal using the distance formula between points 1 and 3 of the quad
-    find areas of both triangles using heron's formula
-    add the areas of the two triangles together'''
+    '''Finding the area of a quadrilateral that is irregular, i.e. not a square/rectangle
+    
+    The inputs are the x,y,z of the vertice of one of the grid boxes, the lengths of each of the sides of that grid box, 
+    and the array of all of the vertices of the surface grid.
+    It works by dividing the quad into two triangles with a diagonal down the middle.
+    Then it finds the length of the diagonal using the distance formula between points 1 and 3 of the quad.
+    It finds areas of both triangles using heron's formula, adn then adds the areas of the two triangles together.
+    The output is a float.
+    '''
     diagonal_len = distanceFormula(surface_points[point, 0], surface_points[point, 1], surface_points[point, 2], surface_points[point+(int(config.GRIDSIZE_MULTIPLIER*config.X_LENGTH)+2), 0], surface_points[point+(int(config.GRIDSIZE_MULTIPLIER*config.X_LENGTH)+2), 1],surface_points[point+(int(config.GRIDSIZE_MULTIPLIER*config.X_LENGTH)+2), 2])
     s1 = (l1+l2+diagonal_len)/2
     s2 = (l3+l4+diagonal_len)/2
@@ -202,11 +207,14 @@ def areaofIrregularQuad(point, l1, l2, l3, l4, surface_points):
     return area_total
 
 def totalVolume(surface_points):
-    '''find the total volume under the surface
-    can do this by dividing each of the squares in the grid into two triangles
-    if the points of each square are 1-4, with the top left being 1 and then proceeding clockwise,
+    '''This function finds the total volume under the surface grid on top of the already formed skeleton.
+    
+    It does this by dividing each of the squares in the grid into two triangles.
+    If the points of each square are 1-4, with the top left being 1 and then proceeding clockwise,
     draw the line for the triangle from point 1 to point 3. Then the formula for area of each truncated
-    triangular prism is V = A 1/3 (z1 + z2 + z3) where A is area of base of prism'''
+    triangular prism is V = A 1/3 (z1 + z2 + z3) where A is area of base of prism.
+    The output is a float.
+    '''
     #Area of the base of the triangular prism is half the area of one flat grid cell (z=0), with an area of 0.5*0.5 (grid wall lengths)
     A = config.GRIDSIZEINPUT_FORSURFACE**2/2
     Vol_total = 0
@@ -230,8 +238,11 @@ def totalVolume(surface_points):
 
 #Grows each nucleus according to inorganic rate law - calculates new r
 def growEachNucleus(nucleus_array, Growth_Rate):
-    '''After each timestep, grow each nucleus according to inorganic rate law defined above
-    Updates r with every iteration of time, and updates z if the nucleus is not located on the ground'''
+    '''After each timestep, grow each nucleus according to inorganic rate law defined above.
+
+    Updates the nuclei array: r with every iteration of time, and updates z if the nucleus is not located on the ground.
+    Returns a float of the sum of all of the volumes of nuclei present so far.
+    '''
     #surface area of each hemisphere in um2 
     SA = nucleus_array[:, 3]*nucleus_array[:, 3] * np.pi*4/2 
     #mol per sphere
@@ -254,7 +265,9 @@ def growEachNucleus(nucleus_array, Growth_Rate):
 
 def areasofEachCellinGrid(surface_points):
     '''Uses the distance formula between the vertices of each box of the grid and calculates the 
-    area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas'''
+    area of each triangular half of each box, then adds them together for each box, and saves each area in an array called all_areas.
+    
+    '''
     all_areas = np.zeros(int(config.X_LENGTH/config.GRIDSIZEINPUT_FORSURFACE) * int(config.Y_LENGTH/config.GRIDSIZEINPUT_FORSURFACE))
     area_count = 0
     for ones in np.arange(0,config.Y_LENGTH*config.GRIDSIZE_MULTIPLIER):
@@ -273,7 +286,9 @@ def areasofEachCellinGrid(surface_points):
 
 def findNewXYZ(areas_gridcells, random_location, nuclei):
     '''Find which cell grid you should put a new nucleus in (the grid is area weighted) and 
-    then place the nucleus randomly within that grid cell'''
+    then place the nucleus randomly within that grid cell.
+    
+    '''
     #go through the cell areas and add them up until you get to the value you generated in random_location
     which_cell_area = 0
     area_count = 0
@@ -294,6 +309,7 @@ def findNewXYZ(areas_gridcells, random_location, nuclei):
     new_weighted_z = getZElevation(new_weighted_x, new_weighted_y, nuclei)
     return new_weighted_x, new_weighted_y, new_weighted_z
 
+#Used in the findTimetoCoverGround function
 time_groundcover_10 = []
 time_groundcover_25 = []
 time_groundcover_50 = []
@@ -301,7 +317,9 @@ time_groundcover_75 = []
 time_groundcover_final = []
 
 def findTimetoCoverGround(percentcoverage_firstlayer):
-    '''amount of time it takes to cover the ground to different percentages'''  
+    '''Calculates the amount of time it takes to cover the ground to different percentages.
+    
+    '''  
     if percentcoverage_firstlayer > 10 and percentcoverage_firstlayer < 15:
         time_groundcover_10.append(t)
     if percentcoverage_firstlayer > 25 and percentcoverage_firstlayer < 30:
@@ -315,8 +333,10 @@ def findTimetoCoverGround(percentcoverage_firstlayer):
     return time_groundcover_10, time_groundcover_25, time_groundcover_50, time_groundcover_75, time_groundcover_final
 
 def porosityofSkeleton(nuclei, volume, surface_points):
-    '''find the porosity by finding all of the places in the skeleton where there are no nuclei, 
-    then subtracting that number from total volume'''
+    '''Calculates the porosity by finding all of the places in the skeleton where there are no nuclei, 
+    then subtracting that number from total volume.
+    
+    This is not turned on in the spheresmaster_script.py because it makes the code take a lot longer to run.'''
     numIntersecting = 0
     numPointsTested = 0
     nuclei_x = nuclei[:, 0]
@@ -338,7 +358,9 @@ def porosityofSkeleton(nuclei, volume, surface_points):
 
 #density of nuclei on the ground
 def nucleiGroundDensity(nuclei):
-    '''total number of nuclei on the ground divided by ground area'''
+    '''Calculates the total number of nuclei on the ground divided by ground area.
+    
+    '''
     nuclei_ground_count = 0
     for nucleus in range(len(nuclei)):
         if nuclei[nucleus, 2] == 0:
@@ -347,9 +369,11 @@ def nucleiGroundDensity(nuclei):
     return nuclei_ground_count, nuclei_density
 
 def verticalExtension(MAX_HEIGHT, surface_points):
-    '''Counts the zs at every iteration that are above or equal to a certain arbitrary height that is chosen for each OMEGA - if
-    90% of the zs are higher than or equal to that height, it divides by amount of time it took to get that high, resultin gin vertical 
-    extension'''  
+    '''Counts the zs at every iteration that are above or equal to a certain arbitrary height that is chosen for each OMEGA 
+    
+    If 90% of the zs are higher than or equal to that height, it divides by amount of time it took to get that high, resulting in vertical 
+    extension calculation.
+    '''  
     z_count = 0
     for z in surface_points[:, 2]:
         if z >= MAX_HEIGHT:
@@ -360,9 +384,14 @@ def verticalExtension(MAX_HEIGHT, surface_points):
             vertical_extension = 0
     return vertical_extension
 
+#Used in the outputAtCertainTimes function
 dict_times_output = {}
 def outputAtCertainTimes(t, volume, surface_points, nuclei, percentcoverage_firstlayer):
-    '''Defines a dictionary of each time as the key and the number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count, vertical extension rate'''  
+    '''Outputs a dictionary of results for each timepoint.
+    
+    Each time as the key. 
+    The number of nuclei, amount of floor covered, total growth at that time as the values, ratio of nuclei/growth, calcification, nuclei ground count, vertical extension rate are the values.
+    '''  
     vertical_extension = verticalExtension(config.MAX_HEIGHT, surface_points)
     z_sum = sum(surface_points[:, 2])
     number_z = len(surface_points[:, 2])
@@ -372,7 +401,11 @@ def outputAtCertainTimes(t, volume, surface_points, nuclei, percentcoverage_firs
     return dict_times_output
 
 def plot3DSpheres(nuclei, OMEGA):
-    '''plotting hemispheres for each nucleus'''            
+    '''Plots hemispheres to represent each nucleus.
+    
+    The figure is plotted, saved, and closed.
+    It is given a unique filename and saved in the 'results' folder in the cwd.
+    '''            
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.set_xlim((0, config.X_LENGTH))
@@ -396,7 +429,11 @@ def plot3DSpheres(nuclei, OMEGA):
     plt.close()
 
 def plotSurfaceGrid(nuclei, OMEGA, surface_points):  
-    '''plot the 3D grid surface of the nuclei and the walls'''  
+    '''Plots the 3D grid surface and walls of the nuclei present.
+    
+    The figure is plotted, saved, and closed.
+    It is given a unique filename and saved in the 'results' folder in the cwd.
+    '''  
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.set_xlim((0, config.X_LENGTH+config.GRIDSIZEINPUT_FORSURFACE))
