@@ -11,8 +11,11 @@ cwd = os.getcwd()
 
 #Function for determining if a given point intersects with any nucleus in nuclei
 def doesPointIntersectAnyNucleus(x, y, z, nuclei_x, nuclei_y, nuclei_z, nuclei_r):
-    '''does a given x,y point intersect a nucleus?
-    compute distance from x,y to nucleus center and see if it's less than nucleus radius'''
+    '''This function computes distance from x,y to nucleus center and see if it's less than nucleus radius.
+
+    The inputs are a coordinates of a point on the grid of the surface of the skeleton and the coordinates and radius of a nucleus.
+    It returns True if the point does intersect with the nucleus.
+    '''
     distance = np.sqrt((x-nuclei_x)**2 + (y-nuclei_y)**2 + (z-nuclei_z)**2)
     if np.any(distance <= nuclei_r):
         return True
@@ -21,7 +24,10 @@ def doesPointIntersectAnyNucleus(x, y, z, nuclei_x, nuclei_y, nuclei_z, nuclei_r
 
 ##These functions are used to find the area of the 2D xy grid occupied by nuclei
 def getSampledPercentageAreaOccupiedByNuclei(nuclei_xlayer, nuclei_ylayer, nuclei_rlayer):
-    "What is the area of the xy plane occupied by nuclei at each timepoint?"
+    '''This function calculates the area of the xy plane occupied by nuclei at each timepoint.
+    
+    The inputs are arrays of the x and y coordinates and radii of the nuclei that are present at that timepoint.
+    It returns a float.'''
     numIntersecting = 0
     numPointsTested = 0
     for xx in range(config.X_LENGTH+1):
@@ -34,10 +40,12 @@ def getSampledPercentageAreaOccupiedByNuclei(nuclei_xlayer, nuclei_ylayer, nucle
 
 ##Determines the z elevation at a given point of the potential nuclei there
 def getElevationonNucleus(x, y, x0, y0, z0, r):
-    "want to measure the height of a nucleus from any point within the radius"
-    "Calculated z based on trig of point on edge of sphere, which is related to radius, x, y, and two angles theta and phi"
-    "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"
-    '''This checks the relative height of the nucleus, meaning it adds the z value to the radius, essentially, to get the overall height'''
+    '''This function determines the height of a nucleus if it is present at a specific point on the surface grid.
+
+    x and y are the point location that we are testing the height of, while x0 and y0 are the center of the nucleus.
+    The output is z, the height of the nucleus from the ground at that point on the surface grid.
+    If the nucleus is not present at that point, the height is 0.
+    '''
     inside_equation = r**2-(x-x0)**2-(y-y0)**2             
     if inside_equation <= 0:
         z = 0
@@ -49,10 +57,12 @@ def getElevationonNucleus(x, y, x0, y0, z0, r):
     return z
 
 def getElevationUnderNucleus(x, y, x0, y0, r):
-    "want to measure the height of a nucleus from any point within the radius"
-    "Calculated z based on trig of point on edge of sphere, which is related to radius, x, y, and two angles theta and phi"
-    "x and y are the point that we are testing the height of, while x0 and y0 are the center of the sphere"
-    '''This checks the relative height of the nucleus, meaning it adds the z value to the radius, essentially, to get the overall height'''
+    '''This function calculates the height of a nucleus from any point within the radius of that nucleus from the bottom of the hemisphere.
+    
+    x and y are the point that we are testing the height of, while x0 and y0 are the center of the nucleus.
+    The output is z, the height of hemisphere at that point within the nucleus' radius.
+    It is not calculating the overall height of that point on the nucleus from the ground.
+    '''
     inside_equation = r**2-(x-x0)**2-(y-y0)**2             
     if inside_equation <= 0:
         z = 0
@@ -61,8 +71,12 @@ def getElevationUnderNucleus(x, y, x0, y0, r):
     return z
     
 def getZElevation(x, y, nuclei):
-    "want to know what the elevation of a nucleus is at a given point"
-    "the given point is x,y, and it loops through the nuclei matrix, checking to see if it overlaps with any nuclei - if it does, the height at that spot should be >0"
+    '''Determines the elevation of a specific nucleus from the ground at a specific point in the xy grid.
+    
+    The given point's coordinate is the input x, y, and the code loops through the existing nuclei coordinates, input as an array containing the coordinates and radii of all the nuclei.
+    It checks to see if any nuclei overlap with the given point, and stores the highest height recorded at that spot from any nuclei that are present.
+    The output is a float.
+    '''
     highestZSeen = 0
     nucleisize = np.array(np.size(nuclei, axis=0))
     nuclei_x = nuclei[:, 0]
@@ -76,8 +90,11 @@ def getZElevation(x, y, nuclei):
     return highestZSeen
 
 def getZElevationUnderNucleus(x, y, nuclei):
-    "want to know what the elevation of a nucleus is at a given point"
-    "the given point is x,y, and it loops through the nuclei matrix, checking to see if it overlaps with any nuclei - if it does, the height at that spot should be >0"
+    '''Determines the height of a specific nucleus from the bottom of the hemisphere at a specific point on the grid.
+    
+    The coordinates of the given point are the inputs x, y, and the nuclei coordinates and radii are input as an array.
+    The output is a float.
+    '''
     highestZSeen = 0
     nucleisize = np.array(np.size(nuclei, axis=0))
     nuclei_x = nuclei[:, 0]
@@ -91,14 +108,20 @@ def getZElevationUnderNucleus(x, y, nuclei):
 
 ##doing the weighting of areas that are within nuclei to account for surface area
 def distanceFormula(x, y, z, x0, y0, z0):
-    '''distance between two points'''
+    '''Calculates the distance between two points in a 3D grid.
+    
+    The inputs are the coordinates of the two points, and they must each have an x, y, and z value.'''
     distance = np.sqrt((x-x0)**2+(y-y0)**2+(z-z0)**2)
     return distance
 
 ##Making a surface with discrete points in x,y,z space
 def Discrete3dSurface(gridsize, nuclei):
-    '''querying every integer point in the x,y,z box to determine where the surface is
-    - put in the size of the walls of each grid in the surface as the input'''
+    '''This function creates an array that represents the surface grid of the skeleton that has formed so far.
+
+    It takes as inputs the xy length of the size of one box in the surface grid, and the array of the nuclei coordinates and radii.
+    The function queries each integer point in the x, y, z box to determine where the surface is.
+    It returns an array of arrays, where each internal array is the vertice (x,y,z) of one of the boxes of the surface grid.
+    '''
     numPointsTested = 0
     surface_points = np.zeros(((int(config.X_LENGTH/gridsize) + 1) * (int(config.Y_LENGTH/gridsize) + 1), 3))
     for xx in np.arange(0, config.X_LENGTH+gridsize, gridsize):
@@ -112,7 +135,12 @@ def Discrete3dSurface(gridsize, nuclei):
 
 #making a function to make arrays of the walls of the grid that will grow with the nuclei that touch the edge of the grid
 def wallsofGrid(gridsize, nuclei):
-    '''if x or y equals 0 or 100, then find z at those points and store those points in an array, so that they can be plotted'''
+    '''This function creates two arrays that represent vertices of the 3D grid that forms at the edges of the box we are building the skeleton in.
+
+    The inputs are the length of the xy grid cell that makes up the grid and the array of coordinates and radii of the nuclei.
+    We are interested in the edges of the xy grid of the box and finding the z values of the grid.
+    The output arrays will be used with the surface grid to plot the overall surface of the skeleton.
+    '''
     wall_points_front = [[-100, -100, -100]]
     wall_points_back = [[-100, -100, -100]]
     xx_back = 0
@@ -148,7 +176,8 @@ def wallsofGrid(gridsize, nuclei):
 
 #used this thread to figure out how to save each file with a new unique name: https://stackoverflow.com/questions/33691187/how-to-save-the-file-with-different-name-and-not-overwriting-existing-one        
 def uniqueFileName(basename, ext):
-    '''Each time the code runs, it is saved with a unique file name'''
+    '''Each time the code runs, the outputs are saved with a unique file name.
+    '''
     actualname = "%s.%s" % (basename, ext)
     c = itertools.count()
     while os.path.exists(actualname):
