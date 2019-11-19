@@ -2,17 +2,24 @@
 
 ## Prerequisites
 
--Python 3
+- Python 3.7.3
+
+- numpy
+
+- matplotlib
 
 ## Running the code
 
--Edit the constants in [spheresmaster.py](spheresmaster.py) (see below for documentation)
+- Edit the constants in [config.py](config.py) (see below for documentation)
 
--'python3 spheresmaster.py'
+- The functions used to build the skeleton are contained in [skeletal_module.py](skeletal_module.py)
 
--the script will generate three files in a 'results' folder in the your current working directory: a .csv file with the output results and two .png files plotting the results, all named with the constants that you chose
+- to run: 'python3 spheresmaster_script.py'
+
+- The script will generate three files in a 'results' folder in the your current working directory: a .csv file with the output results and two .png files plotting the results, all named with the constants that you chose
 
 ## How to use the constants
+
 The code is set up to use the inorganic rate laws for nucleation and bulk mineral growth for aragonite to grow a skeleton on a flat surface.  Nuclei are randomly distributed and each grows at the same rate.  
 
 The inputs to the code are:
