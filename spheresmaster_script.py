@@ -64,7 +64,7 @@ for t in ttime:
     
     percentcoverage_firstlayer = sk.getSampledPercentageAreaOccupiedByNuclei(nuclei[:,0],nuclei[:,1],nuclei[:,3])*100
     #Record when ground is covered to certain percentages
-    time_groundcoverage = sk.findTimetoCoverGround(percentcoverage_firstlayer)
+    time_groundcoverage = sk.findTimetoCoverGround(percentcoverage_firstlayer, t)
     volume = sk.totalVolume(surface_points)
     timed_output = sk.outputAtCertainTimes(t, volume, surface_points, nuclei, percentcoverage_firstlayer)    
     

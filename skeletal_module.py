@@ -316,7 +316,7 @@ time_groundcover_50 = []
 time_groundcover_75 = []
 time_groundcover_final = []
 
-def findTimetoCoverGround(percentcoverage_firstlayer):
+def findTimetoCoverGround(percentcoverage_firstlayer, t):
     '''Calculates the amount of time it takes to cover the ground to different percentages.
     
     '''  
