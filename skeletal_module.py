@@ -259,7 +259,7 @@ def growEachNucleus(nucleus_array, Growth_Rate):
     numberrows = np.size(nucleus_array[:, 0])    
     for row in range(numberrows):
         if nucleus_array[row,2] > 0:
-            newz = getZElevationUnderNucleus(nucleus_array[row, 0], nucleus_array[row, 1], nuclei)
+            newz = getZElevationUnderNucleus(nucleus_array[row, 0], nucleus_array[row, 1], nucleus_array)
             nucleus_array[row,2] = newz
     return sum(VOL)
 
